@@ -1,0 +1,198 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Japanese resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_JPN)
+#ifdef _WIN32
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+#pragma code_page(932)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+#if defined(APSTUDIO_INVOKED) || defined(DISABLED)
+#if defined(APSTUDIO_INVOKED)
+IDD_CONFIG$(DISABLED) DIALOGEX 0, 0, 235, 235
+#else
+IDD_CONFIG DIALOGEX 0, 0, 235, 235
+#endif
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "ASIO output 設定"
+FONT 9, "MS UI Gothic", 0, 0, 0x0
+BEGIN
+    RTEXT           "デバイス :",IDC_STATIC,8,10,68,8
+    COMBOBOX        IDC_DEVICE,80,8,148,96,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    RTEXT           "スレッドの優先度 :",IDC_STATIC,8,30,68,8
+    COMBOBOX        IDC_THREAD_PRIORITY,80,28,56,96,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    RTEXT           "バッファ サイズ (0-63) :",IDC_STATIC,8,50,68,8
+    EDITTEXT        IDC_BUFFER_SIZE,80,48,24,12,ES_NUMBER,WS_EX_RIGHT
+    CONTROL         "",IDC_BUFFER_SIZE_UPDOWN,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,104,48,8,12,WS_EX_CLIENTEDGE
+    RTEXT           "出力チャンネルをずらす :",IDC_STATIC,8,70,68,8
+    EDITTEXT        IDC_SHIFT_CHANNELS,80,68,24,12,ES_NUMBER,WS_EX_RIGHT
+    CONTROL         "",IDC_SHIFT_CHANNELS_UPDOWN,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,104,68,8,12,WS_EX_CLIENTEDGE
+    CONTROL         "ギャップレスモード",IDC_GAPLESS_MODE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,92,64,10
+    CONTROL         "1チャンネルのデータを2チャンネルに変換する",IDC_CONVERT_1CH_TO_2CH,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,104,132,10
+    CONTROL         "ダイレクトモニターを使用する",IDC_DIRECT_INPUT_MONITOR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,116,92,10
+    GROUPBOX        "リサンプリング",IDC_STATIC,8,136,220,72
+    CONTROL         "有効",IDC_RESAMPLING_ENABLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,149,28,10
+    RTEXT           "スレッドの優先度 :",IDC_STATIC,52,150,52,8
+    COMBOBOX        IDC_RESAMPLING_THREAD_PRIORITY,108,148,56,96,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    RTEXT           "サンプルレート :",IDC_STATIC,52,170,52,8
+    COMBOBOX        IDC_RESAMPLING_SAMPLE_RATE,108,168,36,96,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Hz",IDC_STATIC,148,170,10,8
+    RTEXT           "品質 :",IDC_STATIC,52,190,52,8
+    COMBOBOX        IDC_RESAMPLING_QUALITY,108,188,36,96,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    DEFPUSHBUTTON   "OK",IDOK,124,216,50,14
+    PUSHBUTTON      "キャンセル",IDCANCEL,180,216,50,14
+END
+#endif
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Japanese resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.K.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_CONFIG DIALOGEX 0, 0, 225, 226
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Not So ASIO Output Settings"
+FONT 8, "Tahoma", 0, 0, 0x0
+BEGIN
+    RTEXT           "Device :",IDC_STATIC,8,10,75,8
+    COMBOBOX        IDC_DEVICE,87,8,132,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    RTEXT           "Thread priority :",IDC_STATIC,8,27,75,8
+    COMBOBOX        IDC_THREAD_PRIORITY,87,25,68,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    RTEXT           "Buffer size (0-63) :",IDC_STATIC,8,45,75,8
+    EDITTEXT        IDC_BUFFER_SIZE,87,43,32,12,ES_NUMBER,WS_EX_RIGHT
+    CONTROL         "",IDC_BUFFER_SIZE_UPDOWN,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,119,43,11,12,WS_EX_CLIENTEDGE
+    RTEXT           "Shift Output channels :",IDC_STATIC,8,61,75,8
+    EDITTEXT        IDC_SHIFT_CHANNELS,87,59,32,12,ES_NUMBER,WS_EX_RIGHT
+    CONTROL         "",IDC_SHIFT_CHANNELS_UPDOWN,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,119,59,11,12,WS_EX_CLIENTEDGE
+    CONTROL         "Gapless mode",IDC_GAPLESS_MODE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,77,60,10
+    CONTROL         "Convert 1 channel to 2 channels (mono to stereo)",IDC_CONVERT_1CH_TO_2CH,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,90,175,10
+    CONTROL         "Use Direct input monitor",IDC_DIRECT_INPUT_MONITOR,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,103,93,10
+    CONTROL         "Enable volume control (Note:This is experimental and it will change the global system volume)",IDC_VOLUME_CONTROL,
+                    "Button",BS_AUTOCHECKBOX | BS_TOP | BS_MULTILINE | WS_TABSTOP,8,116,196,18
+    GROUPBOX        "Resampling",IDC_STATIC,6,138,213,66
+    CONTROL         "Enable",IDC_RESAMPLING_ENABLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,151,40,10
+    RTEXT           "Thread priority :",IDC_STATIC,58,152,60,8
+    COMBOBOX        IDC_RESAMPLING_THREAD_PRIORITY,122,150,68,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    RTEXT           "Sample rate :",IDC_STATIC,58,170,60,8
+    COMBOBOX        IDC_RESAMPLING_SAMPLE_RATE,122,168,48,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Hz",IDC_STATIC,174,170,16,8
+    RTEXT           "Quality :",IDC_STATIC,58,187,60,8
+    COMBOBOX        IDC_RESAMPLING_QUALITY,122,185,44,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    DEFPUSHBUTTON   "OK",IDOK,115,208,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,169,208,50,14
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,0
+ PRODUCTVERSION 1,0,0,0
+ FILEFLAGSMASK 0x17L
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080904b0"
+        BEGIN
+            VALUE "CompanyName", "WACUP (WinAmp Community Update Project)"
+            VALUE "FileDescription", "Winamp Output Plug-in"
+            VALUE "FileVersion", "1, 0, 0, 0"
+            VALUE "InternalName", "out_notsoasio.dll"
+            VALUE "LegalCopyright", "Copyright ｩ 2002-2006 Otachan, Not So ASIO modifications by Darren Owen aka DrO ｩ 2019"
+            VALUE "OriginalFilename", "out_notsoasio.dll"
+            VALUE "ProductName", "Not So ASIO Output"
+            VALUE "ProductVersion", "1, 0, 0, 0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x809, 1200
+    END
+END
+
+#endif    // English (U.K.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
