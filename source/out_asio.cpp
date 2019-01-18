@@ -16,6 +16,15 @@
 #include "pcmasio.h"
 #include <loader/loader/paths.h>
 #include <loader/loader/utils.h>
+#include <mmdeviceapi.h>
+#include <endpointvolume.h>
+#include <Functiondiscoverykeys_devpkey.h>
+#include <initguid.h>
+
+DEFINE_GUID(CLSID_MMDeviceEnumerator, 0xbcde0395, 0xe52f, 0x467c, 0x8e,0x3d,
+    0xc4,0x57,0x92,0x91,0x69,0x2e);
+DEFINE_GUID(IID_IMMDeviceEnumerator, 0xa95664d2, 0x9614, 0x4f35, 0xa7,0x46,
+    0xde,0x8d,0xb6,0x36,0x17,0xe6);
 
 extern HINSTANCE	WSLhInstance;
 
@@ -45,15 +54,18 @@ Out_Module	mod =
 	GetWrittenTime,
 };
 
-PARAM_GLOBAL	ParamGlobal;
+PARAM_GLOBAL	ParamGlobal = {0};
 
-PcmAsio*	pPcmAsio;
+PcmAsio*	pPcmAsio = NULL;
 
-HANDLE	hThread;
-HANDLE	EventReadyThread;
-HANDLE	EventDestroyThread;
+HANDLE	hThread = NULL;
+HANDLE	EventReadyThread = NULL;
+HANDLE	EventDestroyThread = NULL;
 
-bool	PlayEOF;
+bool	PlayEOF = false;
+//bool	FirstWrite = false;
+
+int volume = 255;
 
 extern "C"
 {
@@ -77,7 +89,7 @@ HookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
 unsigned int __stdcall
 ThreadProc(void* /*Param*/)
 {
-	MSG		Msg;
+	MSG		Msg = {0};
 
 	::PeekMessage(&Msg, NULL, WM_USER, WM_USER, PM_NOREMOVE);
 
@@ -334,10 +346,17 @@ int __cdecl
 Open(int samplerate, int numchannels, int bitspersamp, int bufferlenms, int prebufferms)
 {
 	PlayEOF = false;
+	//FirstWrite = false;
 
 	SetWindowSubclass(mod.hMainWindow, HookProc, (UINT_PTR)HookProc, NULL);
 
 	return ParamMsg(MSG_OPEN, samplerate, bitspersamp, numchannels).Call();
+	/*int ret = ParamMsg(MSG_OPEN, samplerate, bitspersamp, numchannels).Call();
+	if (ret >= 0)
+	{
+		SetVolume(-666);
+	}
+	return ret;*/
 }
 
 void __cdecl
@@ -349,6 +368,11 @@ Close(void)
 int __cdecl
 Write(char *buf, int len)
 {
+	/*if (!FirstWrite)
+	{
+		FirstWrite = true;
+		SetVolume(-666);
+	}*/
 	return ParamMsg(MSG_WRITE, len, reinterpret_cast<unsigned char*>(buf)).Call();
 }
 
@@ -370,156 +394,20 @@ Pause(int pause)
 	return ParamMsg(MSG_PAUSE, pause).Call();
 }
 
-#include <mmdeviceapi.h>
-#include <endpointvolume.h>
-
-bool ChangeVolume(double nVolume, bool bScalar)
-{
-
-    HRESULT hr=NULL;
-    bool decibels = false;
-    bool scalar = false;
-    double newVolume=nVolume;
-
-    CoInitialize(NULL);
-    IMMDeviceEnumerator *deviceEnumerator = NULL;
-    hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_INPROC_SERVER, 
-                          __uuidof(IMMDeviceEnumerator), (LPVOID *)&deviceEnumerator);
-    IMMDevice *defaultDevice = NULL;
-
-    hr = deviceEnumerator->GetDefaultAudioEndpoint(eRender, /*eMultimedia/*/eConsole/**/, &defaultDevice);
-    deviceEnumerator->Release();
-    deviceEnumerator = NULL;
-
-    IAudioEndpointVolume *endpointVolume = NULL;
-    hr = defaultDevice->Activate(__uuidof(IAudioEndpointVolume), 
-         CLSCTX_INPROC_SERVER, NULL, (LPVOID *)&endpointVolume);
-    defaultDevice->Release();
-    defaultDevice = NULL;
-
-    // -------------------------
-    float currentVolume = 0;
-    endpointVolume->GetMasterVolumeLevel(&currentVolume);
-    //printf("Current volume in dB is: %f\n", currentVolume);
-
-    hr = endpointVolume->GetMasterVolumeLevelScalar(&currentVolume);
-
-    if (bScalar==false)
-    {
-        hr = endpointVolume->SetMasterVolumeLevel((float)newVolume, NULL);
-    }
-    else if (bScalar==true)
-    {
-        hr = endpointVolume->SetMasterVolumeLevelScalar((float)newVolume, NULL);
-    }
-    endpointVolume->Release();
-
-    CoUninitialize();
-
-    return FALSE;
-}
-
-#include <Functiondiscoverykeys_devpkey.h>
-#include <initguid.h>
-#include <mmdeviceapi.h>
-#include <endpointvolume.h>
-
-DEFINE_GUID(CLSID_MMDeviceEnumerator, 0xbcde0395, 0xe52f, 0x467c, 0x8e,0x3d,
-    0xc4,0x57,0x92,0x91,0x69,0x2e);
-DEFINE_GUID(IID_IMMDeviceEnumerator, 0xa95664d2, 0x9614, 0x4f35, 0xa7,0x46,
-    0xde,0x8d,0xb6,0x36,0x17,0xe6);
-
 void __cdecl
-SetVolume(int volume)
+SetVolume(int v)
 {
-#if 0
-	ASIOChannelControls ChannelControls = {0};
-	ChannelControls.channel = -1;
-	ChannelControls.isInput = ASIOFalse;
-	ChannelControls.gain = 0x7fffffff/2;
-	ChannelControls.meter = 0x7fffffff/2;
-
-	const int ret = ASIOFuture(kAsioSetOutputGain, &ChannelControls);
-	if (ret != ASE_SUCCESS)
-	{
-		if (ret != ASE_NotPresent)
+	if ((v != -666) && ParamGlobal.Volume_Control)
 		{
-			char a[32];
-			StringCchPrintfA(a, 32, "%d", ret);
-			MessageBox(0, a, 0, 0);
-			Beep(400, 50);
+		volume = v;
 		}
-	}
-#endif
 
-#if 0
-    //ASSERT( (volume >= 0 && volume <= 255) || volume == -666 );
-    if ( volume == -666 )
-        return;
+		double newVolume = (volume / 255.0f);
 
-    DWORD const volume16bit( volume << 8 );
-    // (todo) Investigate why a direct VERIFY does not work here (!?).
-    MMRESULT const setResult( ::waveOutSetVolume( 0, volume16bit | volume16bit << 16 ) );
-    //ASSERT( setResult == MMSYSERR_NOERROR ); setResult;
-#endif
-
-#if 0
-    //assert( (volume >= 0 && volume <= 255) || volume == -666 );
-    if ( volume == -666 )
-        return;
-
-    // (todo) This is a quick implementation that makes redundant calls every
-    //        time (only the final mixerSetControlDetails() should be required)
-    //        only to avoid having state/becoming an object. It should be
-    //        refactored to get the necessary information only once and use it
-    //        afterwards.
-
-    #pragma comment( lib, "Winmm.lib" )
-    MIXERLINE xline; xline.cbStruct = sizeof( MIXERLINE ); xline.dwComponentType = MIXERLINE_COMPONENTTYPE_DST_SPEAKERS;
-    /*VERIFY*/( ::mixerGetLineInfo( HMIXEROBJ(), &xline, MIXER_GETLINEINFOF_COMPONENTTYPE | MIXER_OBJECTF_MIXER ) == MMSYSERR_NOERROR );
-
-    MIXERCONTROL xcontrol;
-    MIXERLINECONTROLS xcontrols =
-    {
-        sizeof( MIXERLINECONTROLS ),        // xcontrols.cbStruct
-        xline.dwLineID,                     // xcontrols.dwLineID
-        MIXERCONTROL_CONTROLTYPE_VOLUME,    // xcontrols.dwControlType
-        1,                                  // xcontrols.cControls = xline.cControls;
-        sizeof( MIXERCONTROL ),             // xcontrols.cbmxctrl
-        &xcontrol                           // xcontrols.pamxctrl
-    };
-    /*VERIFY*/( ::mixerGetLineControls( HMIXEROBJ(), &xcontrols, MIXER_GETLINECONTROLSF_ONEBYTYPE | MIXER_OBJECTF_MIXER ) == MMSYSERR_NOERROR );
-
-
-    static MIXERCONTROLDETAILS_UNSIGNED detail;
-    static MIXERCONTROLDETAILS detalis =
-    {
-        sizeof( MIXERCONTROLDETAILS ),              // detalis.cbStruct
-        1,                                          // detalis.dwControlID
-        1,                                          // detalis.cChannels
-        NULL,                                       // detalis.hwndOwner
-        sizeof( MIXERCONTROLDETAILS_UNSIGNED ),     // detalis.cbDetails
-        &detail                                     // detalis.paDetails
-    };
-    detalis.dwControlID = xcontrol.dwControlID;
-
-    detail.dwValue = volume << 8 | 0xFF;
-
-    /*VERIFY*/( ::mixerSetControlDetails( HMIXEROBJ(), &detalis, MIXER_OBJECTF_WAVEOUT | MIXER_SETCONTROLDETAILSF_VALUE ) == MMSYSERR_NOERROR );
-#endif
-
-//waveOutSetVolume(NULL, 0);
-//	ChangeVolume(0.0, false/*double nVolume,bool bScalar*/);
-
-#if 0
-	{
-		char text[128] = {0};
-  bool decibels = false;
-  bool scalar = false;
-  double newVolume = 0;
   CoInitialize(NULL);
   IMMDeviceEnumerator *deviceEnumerator = NULL;
-  HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_INPROC_SERVER, __uuidof(IMMDeviceEnumerator), (LPVOID *)&deviceEnumerator);
+		HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_INPROC_SERVER, 
+									  __uuidof(IMMDeviceEnumerator), (LPVOID *)&deviceEnumerator);
   IMMDevice *defaultDevice = NULL;
 
   hr = deviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &defaultDevice);
@@ -527,89 +415,29 @@ SetVolume(int volume)
   deviceEnumerator = NULL;
 
   IAudioEndpointVolume *endpointVolume = NULL;
-  hr = defaultDevice->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_INPROC_SERVER, NULL, (LPVOID *)&endpointVolume);
+		hr = defaultDevice->Activate(__uuidof(IAudioEndpointVolume), 
+									 CLSCTX_INPROC_SERVER, NULL,
+									 (LPVOID *)&endpointVolume);
   defaultDevice->Release();
   defaultDevice = NULL; 
 
   // -------------------------
   float currentVolume = 0;
   endpointVolume->GetMasterVolumeLevel(&currentVolume);
-  //StringCchPrintf(text, ARRAYSIZE(text), "Current volume in dB is: %f\n", currentVolume);
-  //MessageBox(0, text, 0, 0);
 
   hr = endpointVolume->GetMasterVolumeLevelScalar(&currentVolume);
-  //StringCchPrintf(text, ARRAYSIZE(text), "Current volume as a scalar is: %f\n", currentVolume);
-  //MessageBox(0, text, 0, 0);
-  if (decibels)
+
+		/*if (bScalar == false)
   {
     hr = endpointVolume->SetMasterVolumeLevel((float)newVolume, NULL);
   }
-  else if (scalar)
+		else if (bScalar == true)*/
   {
     hr = endpointVolume->SetMasterVolumeLevelScalar((float)newVolume, NULL);
   }
-
-  //endpointVolume->SetMute(TRUE, NULL);
-  if (SUCCEEDED(hr))
-  {
-
-  }
-  else
-  {
-	  Beep(400, 50);
-  }
-
   endpointVolume->Release();
 
   CoUninitialize();
-	}
-#endif
-
-    if ((volume != -666) && ParamGlobal.Volume_Control)
-	{
-		ChangeVolume((volume / 255.0f), true);
-	}
-
-#if 0
-	{
-	HRESULT hr = S_OK;
-	IMMDeviceEnumerator *pEnumerator = NULL;
-	IMMDeviceCollection *pCollection = NULL;
-	IMMDevice *pEndpoint = NULL;
-	IPropertyStore *pProps = NULL;
-	LPWSTR pwszID = NULL;
-	CoInitialize(NULL);
-	UINT count;
-	hr = CoCreateInstance(CLSID_MMDeviceEnumerator, NULL,CLSCTX_ALL, IID_IMMDeviceEnumerator,(void**)&pEnumerator);
-	hr = pEnumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &pCollection);
-	hr = pCollection->GetCount(&count);
-	if (count > 0)
-	{
-		for (ULONG i = 0; i < count; i++)
-		{
-			hr = pCollection->Item(i, &pEndpoint);
-			hr = pEndpoint->GetId(&pwszID);
-			IAudioEndpointVolume *endpointVolume = NULL;
-			pEnumerator->GetDevice(pwszID, &pEndpoint);
-			pEndpoint->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_INPROC_SERVER, NULL, (LPVOID *)&endpointVolume);
-			hr = pEndpoint->OpenPropertyStore(STGM_READ, &pProps);
-			PROPVARIANT varName = {0};
-			PropVariantInit(&varName);
-			hr = pProps->GetValue(PKEY_Device_FriendlyName, &varName);
-			/*char text[128];
-			StringCchPrintf(text, ARRAYSIZE(text), "Endpoint %d: \"%S\" (%S)\n",i, varName.pwszVal, pwszID);
-			MessageBox(0, text, 0, 0);*/
-			CoTaskMemFree(pwszID);
-			pwszID = NULL;
-			PropVariantClear(&varName);
-
-			// set volume level of device to 0.0 to 1.0
-			endpointVolume->SetMasterVolumeLevelScalar((volume / 255.0f), NULL);
-			endpointVolume->Release();
-		}
-	}
-	}
-#endif
 }
 
 void __cdecl

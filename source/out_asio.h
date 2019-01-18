@@ -6,11 +6,9 @@
 
 #include "WaitForObject.h"
 
-#define	VER			L"1.0"
+#define	VER			L"1.0.1"
 #define	NAME		L"Not So ASIO v" VER
 #define	INI_NAME	L"Not So ASIO"
-
-#define	MAX_PATHLEN	512
 
 LRESULT CALLBACK	HookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
 							 UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
