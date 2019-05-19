@@ -61,18 +61,53 @@ PcmAsio*	pPcmAsio = NULL;
 HANDLE	hThread = NULL;
 HANDLE	EventReadyThread = NULL;
 HANDLE	EventDestroyThread = NULL;
-
+bool	Loaded = false;
 bool	PlayEOF = false;
-//bool	FirstWrite = false;
 
 int volume = 255;
 
-extern "C"
-{
-	__declspec(dllexport) Out_Module* __cdecl
+extern "C" __declspec(dllexport) Out_Module* __cdecl
 	winampGetOutModule(void)
 	{
 		return &mod;
+	}
+
+extern "C" __declspec(dllexport) void __cdecl
+winampGetOutModeChange(int mode)
+{
+	// just look at the set / unset state
+	switch (mode & ~0xFF0)
+	{
+		case OUT_UNSET:
+		{
+			// we've been unloaded so we can 
+			// reset everything just in-case
+			break;
+		}
+		case OUT_SET:
+		{
+			// if we're not being used then there's no
+			// need to be loading anything until then
+			/*if ((WASABI_API_SVC == NULL) && (WASABI_API_LNG == NULL))
+			{
+				WASABI_API_SVC = GetServiceAPIPtr();
+				if (WASABI_API_SVC != NULL)
+				{
+					if (WASABI_API_LNG == NULL)
+					{
+						ServiceBuild(WASABI_API_SVC, WASABI_API_LNG, languageApiGUID);
+						WASABI_API_START_LANG(plugin.hDllInstance, OutIgnorantLangGUID);
+					}
+				}
+			}*/
+
+			if (!Loaded)
+			{
+				Loaded = true;
+				ReadProfile();
+			}
+			break;
+		}
 	}
 }
 
@@ -310,19 +345,6 @@ Init(void)
 
 	EventDestroyThread = ::CreateEvent(NULL, false, false, NULL);
 	EventReadyThread = ::CreateEvent(NULL, false, false, NULL);
-
-	unsigned int	dwThread = 0;
-
-	hThread = reinterpret_cast<HANDLE>(_beginthreadex(NULL, 0, ThreadProc, NULL, 0, &dwThread));
-
-	if (EventReadyThread != NULL)
-	{
-		::WaitForSingleObject(EventReadyThread, INFINITE);
-		::CloseHandle(EventReadyThread);
-		EventReadyThread = NULL;
-	}
-
-	ReadProfile();
 }
 
 void __cdecl
@@ -330,6 +352,7 @@ Quit(void)
 {
 	RemoveWindowSubclass(mod.hMainWindow, HookProc, (UINT_PTR)HookProc);
 
+	if(hThread != NULL) {
 	::SetEvent(EventDestroyThread);
 
 	if(::WaitForSingleObject(hThread, 5000) != WAIT_OBJECT_0) {
@@ -339,14 +362,30 @@ Quit(void)
 	}
 
 	::CloseHandle(hThread);
+		hThread = NULL;
+	}
+
+	if(EventDestroyThread != NULL) {
 	::CloseHandle(EventDestroyThread);
+		EventDestroyThread = NULL;
+	}
 }
 
 int __cdecl
 Open(int samplerate, int numchannels, int bitspersamp, int bufferlenms, int prebufferms)
 {
 	PlayEOF = false;
-	//FirstWrite = false;
+
+	unsigned int dwThread = 0;
+
+	hThread = reinterpret_cast<HANDLE>(_beginthreadex(NULL, 0, ThreadProc, NULL, 0, &dwThread));
+
+	if (EventReadyThread != NULL)
+	{
+		::WaitForSingleObject(EventReadyThread, INFINITE);
+		::CloseHandle(EventReadyThread);
+		EventReadyThread = NULL;
+	}
 
 	SetWindowSubclass(mod.hMainWindow, HookProc, (UINT_PTR)HookProc, NULL);
 
@@ -368,11 +407,6 @@ Close(void)
 int __cdecl
 Write(char *buf, int len)
 {
-	/*if (!FirstWrite)
-	{
-		FirstWrite = true;
-		SetVolume(-666);
-	}*/
 	return ParamMsg(MSG_WRITE, len, reinterpret_cast<unsigned char*>(buf)).Call();
 }
 
