@@ -5,7 +5,7 @@
 
 #include "WaitForObject.h"
 
-DWORD
+/*DWORD
 _WaitForSingleObject(const HANDLE hHandle, const DWORD dwMilliseconds)
 {
 	DWORD	RetCode;
@@ -17,7 +17,7 @@ _WaitForSingleObject(const HANDLE hHandle, const DWORD dwMilliseconds)
 												false,
 												dwMilliseconds,
 												QS_ALLINPUT)) == (WAIT_OBJECT_0 + 1)) {
-			MSG		Msg;
+			MSG		Msg = {0};
 
 			while(::PeekMessage(&Msg, NULL, NULL, NULL, PM_REMOVE)) {
 				::TranslateMessage(&Msg);
@@ -44,7 +44,7 @@ _WaitForSingleObjectEx(const HANDLE hHandle, const DWORD dwMilliseconds, const b
 												QS_ALLINPUT,
 												bAlertable ? MWMO_ALERTABLE : 0)) ==
 													(WAIT_OBJECT_0 + 1)) {
-			MSG		Msg;
+			MSG		Msg = {0};
 
 			while(::PeekMessage(&Msg, NULL, NULL, NULL, PM_REMOVE)) {
 				::TranslateMessage(&Msg);
@@ -56,5 +56,4 @@ _WaitForSingleObjectEx(const HANDLE hHandle, const DWORD dwMilliseconds, const b
 	}
 
 	return RetCode;
-}
-
+}*/

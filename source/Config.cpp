@@ -8,7 +8,7 @@
 #include "pcmasio.h"
 
 extern AsioDrivers*	asioDrivers;
-
+extern bool Loaded;
 extern PARAM_GLOBAL	ParamGlobal;
 
 extern PcmAsio*	pPcmAsio;
@@ -45,6 +45,12 @@ DialogOption::~DialogOption(void)
 bool
 DialogOption::WmInitDialog(Org_Mes* OrgMes, HWND hwnd, LONG lInitParam)
 {
+	if (!Loaded)
+	{
+		Loaded = true;
+		ReadProfile();
+	}
+
 	OrgMes->ExecMessage = true;
 	SDialog::WmInitDialog(OrgMes, hwnd, lInitParam);
 
@@ -65,6 +71,13 @@ DialogOption::WmInitDialog(Org_Mes* OrgMes, HWND hwnd, LONG lInitParam)
 	Resampling_SampleRate = new SComboBox(this, IDC_RESAMPLING_SAMPLE_RATE);
 	Resampling_Quality = new SComboBox(this, IDC_RESAMPLING_QUALITY);
 
+	if (asioDrivers == NULL)
+	{
+		asioDrivers = new AsioDrivers();
+	}
+
+	if (asioDrivers != NULL)
+	{
 	const int	MaxDriver = asioDrivers->asioGetNumDev();
 
 	for(int Idx = 0; Idx < MaxDriver; Idx++) {
@@ -74,7 +87,12 @@ DialogOption::WmInitDialog(Org_Mes* OrgMes, HWND hwnd, LONG lInitParam)
 		asioDrivers->asioGetDriverName(Idx, DriverName, DriverNameLen);
 		Device->AddString(DriverName);
 	}
+	}
 
+	if (ParamGlobal.Device < 0 || ParamGlobal.Device > Device->GetCount())
+	{
+		ParamGlobal.Device = 0;
+	}
 	Device->SetCurSel(ParamGlobal.Device);
 
 	for(int Idx = 0; Idx < 4; Idx++) {
@@ -116,7 +134,7 @@ DialogOption::WmInitDialog(Org_Mes* OrgMes, HWND hwnd, LONG lInitParam)
 	Resampling_ThreadPriority->SetCurSel(ParamGlobal.Resampling_ThreadPriority);
 
 	for(int Idx = 0; Idx < 10; Idx++) {
-		char	StrSampleRate[8];
+		char	StrSampleRate[8] = {0};
 
 		_itoa_s(List_Resampling_SampleRate[Idx], StrSampleRate, sizeof StrSampleRate, 10);
 		Resampling_SampleRate->AddString(StrSampleRate);
@@ -217,7 +235,10 @@ DialogOption::CmOk(void)
 	if(New) {
 		// only save if needed
 		WriteProfile();
+		if (pPcmAsio != NULL)
+		{
 		pPcmAsio->SetReOpen();
+		}
 	}
 
 	SDialog::CmOk();

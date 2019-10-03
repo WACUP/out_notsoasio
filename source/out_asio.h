@@ -6,7 +6,7 @@
 
 #include "WaitForObject.h"
 
-#define	VER			L"1.0.2"
+#define	VER			L"1.1"
 #define	NAME		L"Not So ASIO v" VER
 #define	INI_NAME	L"Not So ASIO"
 
@@ -43,8 +43,8 @@ enum
 	MSG_IS_PLAYING,
 	MSG_PAUSE,
 	MSG_FLUSH,
-	MSG_GET_OUTPUTTIME,
-	MSG_GET_WRITTENTIME,
+	//MSG_GET_OUTPUTTIME,
+	//MSG_GET_WRITTENTIME,
 };
 
 struct

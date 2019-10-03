@@ -118,28 +118,42 @@ HookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
 	if (uMsg == WM_WA_MPEG_EOF) {
 		PlayEOF = true;
 	}
-	return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+	return DefSubclass(hWnd, uMsg, wParam, lParam);
 }
 
 unsigned int __stdcall
 ThreadProc(void* /*Param*/)
 {
 	MSG		Msg = {0};
-
 	::PeekMessage(&Msg, NULL, WM_USER, WM_USER, PM_NOREMOVE);
 
+	if (asioDrivers == NULL)
+	{
 	asioDrivers = new AsioDrivers;
-	pPcmAsio = new PcmAsio;
+	}
 
+	if (asioDrivers != NULL)
+	{
+		if (pPcmAsio == NULL)
+		{
+	pPcmAsio = new PcmAsio;
+		}
+
+		if (pPcmAsio != NULL)
+		{
 	::SetEvent(EventReadyThread);
 
-	while(_WaitForSingleObjectEx(EventDestroyThread) != WAIT_OBJECT_0);
+			while(WaitForSingleObjectEx(EventDestroyThread, INFINITE, TRUE) != WAIT_OBJECT_0);
 
 	delete pPcmAsio;
+			pPcmAsio = NULL;
+		}
+
 	delete asioDrivers;
+		asioDrivers = NULL;
+	}
 
 	_endthreadex(0);
-
 	return 0;
 }
 
@@ -147,13 +161,19 @@ void CALLBACK
 ApcProc(ULONG_PTR dwParam)
 {
 	ParamMsg* const	Param = reinterpret_cast<ParamMsg*>(dwParam);
-
+	if (pPcmAsio != NULL) {
 	switch(Param->Msg) {
 	case MSG_OPEN:
 		Param->RetMsg = pPcmAsio->MsgOpen(Param->Param1, Param->Param2, Param->Param3);
 		break;
 	case MSG_CLOSE:
 		pPcmAsio->MsgClose();
+			// this makes sure ThreadProc
+			// will exit out of it's wait
+			if (EventDestroyThread != NULL)
+			{
+				::SetEvent(EventDestroyThread);
+			}
 		break;
 	case MSG_WRITE:
 		Param->RetMsg = pPcmAsio->MsgWrite(Param->Param1, Param->Buff);
@@ -177,6 +197,7 @@ ApcProc(ULONG_PTR dwParam)
 //		Param->RetMsg = pPcmAsio->MsgGetWrittenTime();
 //		break;
 	}
+	}
 
 	Param->UnPause();
 }
@@ -184,12 +205,18 @@ ApcProc(ULONG_PTR dwParam)
 ParamMsg::ParamMsg(const int _Msg)
 {
 	Msg = _Msg;
+	RetMsg = Param1 = Param2 = Param3 = 0;
+	Buff = NULL;
+	EventWaitThread = NULL;
 }
 
 ParamMsg::ParamMsg(const int _Msg, const int _Param1)
 {
 	Msg = _Msg;
 	Param1 = _Param1;
+	RetMsg = Param2 = Param3 = 0;
+	Buff = NULL;
+	EventWaitThread = NULL;
 }
 
 ParamMsg::ParamMsg(const int _Msg, const int _Param1, const int _Param2, const int _Param3)
@@ -198,6 +225,9 @@ ParamMsg::ParamMsg(const int _Msg, const int _Param1, const int _Param2, const i
 	Param1 = _Param1;
 	Param2 = _Param2;
 	Param3 = _Param3;
+	RetMsg = 0;
+	Buff = NULL;
+	EventWaitThread = NULL;
 }
 
 ParamMsg::ParamMsg(const int _Msg, const int _Param1, unsigned char* _Buff)
@@ -205,20 +235,32 @@ ParamMsg::ParamMsg(const int _Msg, const int _Param1, unsigned char* _Buff)
 	Msg = _Msg;
 	Param1 = _Param1;
 	Buff = _Buff;
+	RetMsg = Param2 = Param3 = 0;
+	EventWaitThread = NULL;
 }
 
 ParamMsg::~ParamMsg(void)
 {
+	if (EventWaitThread != NULL)
+	{
+		::WaitForSingleObject(EventWaitThread, INFINITE);
+		::CloseHandle(EventWaitThread);
+		EventWaitThread = NULL;
+	}
 }
 
 int
 ParamMsg::Call(void)
 {
+	if (EventWaitThread == NULL)
+	{
 	EventWaitThread = ::CreateEvent(NULL, false, false, NULL);
+	}
 
-	::QueueUserAPC(&ApcProc, hThread, reinterpret_cast<ULONG_PTR>(this));
 	if (EventWaitThread != NULL)
 	{
+		::QueueUserAPC(&ApcProc, hThread, reinterpret_cast<ULONG_PTR>(this));
+
 		::WaitForSingleObject(EventWaitThread, INFINITE);
 		::CloseHandle(EventWaitThread);
 		EventWaitThread = NULL;
@@ -229,7 +271,10 @@ ParamMsg::Call(void)
 void
 ParamMsg::UnPause(void)
 {
+	if (EventWaitThread != NULL)
+	{
 	::SetEvent(EventWaitThread);
+}
 }
 
 void
@@ -342,22 +387,25 @@ void __cdecl
 Init(void)
 {
 	WSLhInstance = mod.hDllInstance;
-
-	EventDestroyThread = ::CreateEvent(NULL, false, false, NULL);
-	EventReadyThread = ::CreateEvent(NULL, false, false, NULL);
 }
 
 void __cdecl
 Quit(void)
 {
-	RemoveWindowSubclass(mod.hMainWindow, HookProc, (UINT_PTR)HookProc);
+	UnSubclass(mod.hMainWindow, HookProc);
 
-	if(hThread != NULL) {
+	if (hThread != NULL)
+	{
+		if (EventDestroyThread != NULL)
+		{
 	::SetEvent(EventDestroyThread);
+		}
 
-	if(::WaitForSingleObject(hThread, 5000) != WAIT_OBJECT_0) {
-		if(::TerminateThread(hThread, 0)) {
-			::WaitForSingleObject(hThread, 3000);
+		if (::WaitForSingleObject(hThread, INFINITE) != WAIT_OBJECT_0)
+		{
+			if (::TerminateThread(hThread, 0))
+			{
+				::WaitForSingleObject(hThread, INFINITE);
 		}
 	}
 
@@ -365,7 +413,8 @@ Quit(void)
 		hThread = NULL;
 	}
 
-	if(EventDestroyThread != NULL) {
+	if (EventDestroyThread != NULL)
+	{
 	::CloseHandle(EventDestroyThread);
 		EventDestroyThread = NULL;
 	}
@@ -378,6 +427,16 @@ Open(int samplerate, int numchannels, int bitspersamp, int bufferlenms, int preb
 
 	unsigned int dwThread = 0;
 
+	if (EventReadyThread == NULL)
+	{
+		EventReadyThread = ::CreateEvent(NULL, false, false, NULL);
+	}
+
+	if (EventDestroyThread == NULL)
+	{
+		EventDestroyThread = ::CreateEvent(NULL, false, false, NULL);
+	}
+
 	hThread = reinterpret_cast<HANDLE>(_beginthreadex(NULL, 0, ThreadProc, NULL, 0, &dwThread));
 
 	if (EventReadyThread != NULL)
@@ -387,7 +446,7 @@ Open(int samplerate, int numchannels, int bitspersamp, int bufferlenms, int preb
 		EventReadyThread = NULL;
 	}
 
-	SetWindowSubclass(mod.hMainWindow, HookProc, (UINT_PTR)HookProc, NULL);
+	Subclass(mod.hMainWindow, HookProc);
 
 	return ParamMsg(MSG_OPEN, samplerate, bitspersamp, numchannels).Call();
 	/*int ret = ParamMsg(MSG_OPEN, samplerate, bitspersamp, numchannels).Call();
@@ -488,13 +547,13 @@ Flush(int t)
 int __cdecl
 GetOutputTime(void)
 {
-	return pPcmAsio->MsgGetOutputTime();
+	return ((pPcmAsio != NULL) ? pPcmAsio->MsgGetOutputTime() : 0);
 }
 
 int __cdecl
 GetWrittenTime(void)
 {
-	return pPcmAsio->MsgGetWrittenTime();
+	return ((pPcmAsio != NULL) ? pPcmAsio->MsgGetWrittenTime() : 0);
 }
 
 

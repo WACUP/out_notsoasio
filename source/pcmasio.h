@@ -190,4 +190,3 @@ private:
 	inline unsigned char*	ToBuff(unsigned char* ReadPnt);
 	inline TO_BUFF_FUNC	SetToBuffFuc(const ASIOSampleType Type, const int Format, const UINT Bps);
 };
-
