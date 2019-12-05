@@ -1238,11 +1238,12 @@ PcmAsio::MsgGetWrittenTime(void)
 inline unsigned char*
 PcmAsio::ToBuff(unsigned char* ReadPnt)
 {
+	if (ReadPnt) {
 	for(UINT Idx = 0; Idx < FormatInfo.Nch; Idx++) {
 		ChannelInfo[Idx].ToBuffFunc(Idx, ReadPnt);
 		if((EnableConvert1chTo2ch == false) || (Idx == 1)) ReadPnt += FormatInfo.Bps_b;
 	}
-
+	}
 	return ReadPnt;
 }
 

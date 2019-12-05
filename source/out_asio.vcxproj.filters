@@ -1,0 +1,197 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{64d40b1e-274f-4ccf-9cb9-4b9e7154848f}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{30a30ef3-bc27-4007-b0dc-1b2691584383}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{69bee70f-e7bc-4638-9483-a497006b7bf5}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+    <Filter Include="ASIO">
+      <UniqueIdentifier>{ffb44edc-9937-462b-9f15-8a8b0d43e0f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="WSL">
+      <UniqueIdentifier>{f6e72bfb-f0ed-4c55-9685-c3a2f9c16543}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SSRC">
+      <UniqueIdentifier>{352bd7eb-aa13-4f39-bea7-33a77680e938}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External Libraries">
+      <UniqueIdentifier>{f3613abf-06e0-41e4-9f2f-c46a72c3ac38}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CommonFunc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Config.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="out_asio.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pcmasio.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Timer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ToBuff_LSB.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ToBuff_MSB.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WaitForObject.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ASIOSDK2.3.2\common\asio.cpp">
+      <Filter>ASIO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ASIOSDK2.3.2\host\asiodrivers.cpp">
+      <Filter>ASIO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ASIOSDK2.3.2\host\pc\asiolist.cpp">
+      <Filter>ASIO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ASIOSDK2.3.2\common\combase.cpp">
+      <Filter>ASIO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ASIOSDK2.3.2\common\debugmessage.cpp">
+      <Filter>ASIO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ASIOSDK2.3.2\common\dllentry.cpp">
+      <Filter>ASIO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ASIOSDK2.3.2\common\register.cpp">
+      <Filter>ASIO</Filter>
+    </ClCompile>
+    <ClCompile Include="WSL\Button.cpp">
+      <Filter>WSL</Filter>
+    </ClCompile>
+    <ClCompile Include="WSL\ComboBox.cpp">
+      <Filter>WSL</Filter>
+    </ClCompile>
+    <ClCompile Include="WSL\Control.cpp">
+      <Filter>WSL</Filter>
+    </ClCompile>
+    <ClCompile Include="WSL\Dialog.cpp">
+      <Filter>WSL</Filter>
+    </ClCompile>
+    <ClCompile Include="WSL\UpDown.cpp">
+      <Filter>WSL</Filter>
+    </ClCompile>
+    <ClCompile Include="WSL\Window.cpp">
+      <Filter>WSL</Filter>
+    </ClCompile>
+    <ClCompile Include="WSL\WSL.cpp">
+      <Filter>WSL</Filter>
+    </ClCompile>
+    <ClCompile Include="ssrc\dbesi0.cpp">
+      <Filter>SSRC</Filter>
+    </ClCompile>
+    <ClCompile Include="ssrc\fftsg_fl.cpp">
+      <Filter>SSRC</Filter>
+    </ClCompile>
+    <ClCompile Include="ssrc\ssrc.cpp">
+      <Filter>SSRC</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CommonFunc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OUT.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="out_asio.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pcmasio.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ToBuff_LSB.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ToBuff_MSB.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="wa_ipc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WaitForObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ASIOSDK2.3.2\common\asio.h">
+      <Filter>ASIO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ASIOSDK2.3.2\host\asiodrivers.h">
+      <Filter>ASIO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ASIOSDK2.3.2\host\pc\asiolist.h">
+      <Filter>ASIO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ASIOSDK2.3.2\common\asiosys.h">
+      <Filter>ASIO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ASIOSDK2.3.2\common\combase.h">
+      <Filter>ASIO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ASIOSDK2.3.2\host\ginclude.h">
+      <Filter>ASIO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ASIOSDK2.3.2\common\iasiodrv.h">
+      <Filter>ASIO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ASIOSDK2.3.2\common\wxdebug.h">
+      <Filter>ASIO</Filter>
+    </ClInclude>
+    <ClInclude Include="WSL\Button.h">
+      <Filter>WSL</Filter>
+    </ClInclude>
+    <ClInclude Include="WSL\ComboBox.h">
+      <Filter>WSL</Filter>
+    </ClInclude>
+    <ClInclude Include="WSL\Control.h">
+      <Filter>WSL</Filter>
+    </ClInclude>
+    <ClInclude Include="WSL\Dialog.h">
+      <Filter>WSL</Filter>
+    </ClInclude>
+    <ClInclude Include="Wsl\StdProc.h">
+      <Filter>WSL</Filter>
+    </ClInclude>
+    <ClInclude Include="WSL\UpDown.h">
+      <Filter>WSL</Filter>
+    </ClInclude>
+    <ClInclude Include="WSL\Window.h">
+      <Filter>WSL</Filter>
+    </ClInclude>
+    <ClInclude Include="WSL\WSL.h">
+      <Filter>WSL</Filter>
+    </ClInclude>
+    <ClInclude Include="ssrc\ssrc.h">
+      <Filter>SSRC</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="out_asio.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>
