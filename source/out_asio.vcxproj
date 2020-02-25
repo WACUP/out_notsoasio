@@ -129,7 +129,6 @@
     <ClCompile Include="WSL\Button.cpp" />
     <ClCompile Include="WSL\ComboBox.cpp" />
     <ClCompile Include="WSL\Control.cpp" />
-    <ClCompile Include="WSL\Dialog.cpp" />
     <ClCompile Include="WSL\UpDown.cpp" />
     <ClCompile Include="WSL\Window.cpp" />
     <ClCompile Include="WSL\WSL.cpp" />
@@ -158,7 +157,6 @@
     <ClInclude Include="WSL\Button.h" />
     <ClInclude Include="WSL\ComboBox.h" />
     <ClInclude Include="WSL\Control.h" />
-    <ClInclude Include="WSL\Dialog.h" />
     <ClInclude Include="Wsl\StdProc.h" />
     <ClInclude Include="WSL\UpDown.h" />
     <ClInclude Include="WSL\Window.h" />

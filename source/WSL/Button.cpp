@@ -10,12 +10,12 @@
 
 SButton::SButton(SWindow* parent, int id) : SControl(parent, TEXT("button"), id)
 {
-	Attr.Style |= BS_PUSHBUTTON;
+	Style |= BS_PUSHBUTTON;
 }
 
 SButton::SButton(SWindow* parent, int id, DWORD AddStyle) : SControl(parent, TEXT("button"), id)
 {
-	Attr.Style |= AddStyle;
+	Style |= AddStyle;
 }
 
 SButton::~SButton(void)

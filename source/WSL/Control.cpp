@@ -10,7 +10,7 @@
 SControl::SControl(SWindow* parent, LPCTSTR classname, int id) :
 	SWindow(parent, NULL, classname, id, ControlMode_Control)
 {
-	Attr.Style |= WS_CHILD;
+	Style |= WS_CHILD;
 }
 
 SControl::SControl(SWindow* parent, HWND hwnd) : SWindow(parent, NULL, NULL, 0, ControlMode_Control)

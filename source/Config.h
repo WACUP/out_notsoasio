@@ -1,7 +1,7 @@
 
 #include "WSL/WSL.h"
 #include "WSL/Window.h"
-#include "WSL/Dialog.h"
+//#include "WSL/Dialog.h"
 #include "WSL/Control.h"
 #include "WSL/Button.h"
 #include "WSL/Static.h"
@@ -12,7 +12,7 @@
 #include "resource.h"
 
 class
-DialogOption : public SDialog
+DialogOption : public SWindow
 {
 public:
 	DialogOption(const HWND hParentWnd);
@@ -33,8 +33,5 @@ private:
 	SComboBox*	Resampling_Quality;
 
 protected:
-	void	CmOk(void);
-
 	bool	WmInitDialog(Org_Mes* OrgMes, HWND hwnd, LONG lInitParam);
 };
-

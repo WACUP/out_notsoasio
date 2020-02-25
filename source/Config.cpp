@@ -22,12 +22,99 @@ const int	List_Resampling_SampleRate[] =
 const char*	List_Resampling_Quality[] =
 {"Low", "Normal", "High", "Top", "Ultra"};
 
-DialogOption::DialogOption(const HWND hParentWnd) : SDialog(hParentWnd, IDD_CONFIG)
+DialogOption::DialogOption(const HWND hParentWnd) : SWindow(hParentWnd, NULL, NULL, 0, ControlMode_Dialog)
 {
 }
 
 DialogOption::~DialogOption(void)
 {
+	bool	New = false;
+	bool	bParam;
+	int		iParam;
+
+	iParam = Device->GetCurSel();
+	if (ParamGlobal.Device != iParam) {
+		ParamGlobal.Device = iParam;
+		New = true;
+	}
+
+	iParam = ThreadPriority->GetCurSel();
+	if (ParamGlobal.ThreadPriority != iParam) {
+		ParamGlobal.ThreadPriority = iParam;
+		New = true;
+	}
+
+	iParam = BufferSizeUpDown->GetPos();
+	if (ParamGlobal.BufferSize != iParam) {
+		ParamGlobal.BufferSize = iParam;
+		New = true;
+	}
+
+	iParam = ShiftChannelsUpDown->GetPos();
+	if (ParamGlobal.ShiftChannels != iParam) {
+		ParamGlobal.ShiftChannels = iParam;
+		New = true;
+	}
+
+	bParam = GaplessMode->GetCheck() == BF_CHECKED;
+	if (ParamGlobal.GaplessMode != bParam) {
+		ParamGlobal.GaplessMode = bParam;
+		New = true;
+	}
+
+	bParam = Convert1chTo2ch->GetCheck() == BF_CHECKED;
+	if (ParamGlobal.Convert1chTo2ch != bParam) {
+		ParamGlobal.Convert1chTo2ch = bParam;
+		New = true;
+	}
+
+	bParam = DirectInputMonitor->GetCheck() == BF_CHECKED;
+	if (ParamGlobal.DirectInputMonitor != bParam) {
+		ParamGlobal.DirectInputMonitor = bParam;
+		New = true;
+	}
+
+	bParam = Volume_Control->GetCheck() == BF_CHECKED;
+	if (ParamGlobal.Volume_Control != bParam) {
+		ParamGlobal.Volume_Control = bParam;
+		New = true;
+	}
+
+	bParam = Resampling_Enable->GetCheck() == BF_CHECKED;
+	if (ParamGlobal.Resampling_Enable != bParam) {
+		ParamGlobal.Resampling_Enable = bParam;
+		New = true;
+	}
+
+	iParam = Resampling_ThreadPriority->GetCurSel();
+	if (ParamGlobal.Resampling_ThreadPriority != iParam) {
+		ParamGlobal.Resampling_ThreadPriority = iParam;
+		New = true;
+	}
+
+	iParam = List_Resampling_SampleRate[Resampling_SampleRate->GetCurSel()];
+	if (ParamGlobal.Resampling_SampleRate != iParam) {
+		ParamGlobal.Resampling_SampleRate = iParam;
+		New = true;
+	}
+
+	iParam = Resampling_Quality->GetCurSel();
+	if (ParamGlobal.Resampling_Quality != iParam) {
+		ParamGlobal.Resampling_Quality = iParam;
+		New = true;
+	}
+
+	if (New) {
+		// only save if needed
+		WriteProfile();
+		if (pPcmAsio != NULL)
+		{
+			pPcmAsio->SetReOpen();
+		}
+	}
+
+	SWindow::Destroy();
+
 	delete Device;
 	delete ThreadPriority;
 	delete BufferSizeUpDown;
@@ -52,11 +139,11 @@ DialogOption::WmInitDialog(Org_Mes* OrgMes, HWND hwnd, LONG lInitParam)
 	}
 
 	OrgMes->ExecMessage = true;
-	SDialog::WmInitDialog(OrgMes, hwnd, lInitParam);
+	SWindow::WmInitDialog(OrgMes, hwnd, lInitParam);
 
 	HWND	hParentParentWindow = ::GetParent(HParentWindow);
 
-	MoveWindowCenter(hParentParentWindow ? hParentParentWindow : HParentWindow);
+	//MoveWindowCenter(hParentParentWindow ? hParentParentWindow : HParentWindow);
 
 	Device = new SComboBox(this, IDC_DEVICE);
 	ThreadPriority = new SComboBox(this, IDC_THREAD_PRIORITY);
@@ -152,95 +239,3 @@ DialogOption::WmInitDialog(Org_Mes* OrgMes, HWND hwnd, LONG lInitParam)
 
 	return true;
 }
-
-void
-DialogOption::CmOk(void)
-{
-	bool	New = false;
-	bool	bParam;
-	int		iParam;
-
-	iParam = Device->GetCurSel();
-	if(ParamGlobal.Device != iParam) {
-		ParamGlobal.Device = iParam;
-		New = true;
-	}
-
-	iParam = ThreadPriority->GetCurSel();
-	if(ParamGlobal.ThreadPriority != iParam) {
-		ParamGlobal.ThreadPriority = iParam;
-		New = true;
-	}
-
-	iParam = BufferSizeUpDown->GetPos();
-	if(ParamGlobal.BufferSize != iParam) {
-		ParamGlobal.BufferSize = iParam;
-		New = true;
-	}
-
-	iParam = ShiftChannelsUpDown->GetPos();
-	if(ParamGlobal.ShiftChannels != iParam) {
-		ParamGlobal.ShiftChannels = iParam;
-		New = true;
-	}
-
-	bParam = GaplessMode->GetCheck() == BF_CHECKED;
-	if(ParamGlobal.GaplessMode != bParam) {
-		ParamGlobal.GaplessMode = bParam;
-		New = true;
-	}
-
-	bParam = Convert1chTo2ch->GetCheck() == BF_CHECKED;
-	if(ParamGlobal.Convert1chTo2ch != bParam) {
-		ParamGlobal.Convert1chTo2ch = bParam;
-		New = true;
-	}
-
-	bParam = DirectInputMonitor->GetCheck() == BF_CHECKED;
-	if(ParamGlobal.DirectInputMonitor != bParam) {
-		ParamGlobal.DirectInputMonitor = bParam;
-		New = true;
-	}
-
-	bParam = Volume_Control->GetCheck() == BF_CHECKED;
-	if(ParamGlobal.Volume_Control != bParam) {
-		ParamGlobal.Volume_Control = bParam;
-		New = true;
-	}
-
-	bParam = Resampling_Enable->GetCheck() == BF_CHECKED;
-	if(ParamGlobal.Resampling_Enable != bParam) {
-		ParamGlobal.Resampling_Enable = bParam;
-		New = true;
-	}
-
-	iParam = Resampling_ThreadPriority->GetCurSel();
-	if(ParamGlobal.Resampling_ThreadPriority != iParam) {
-		ParamGlobal.Resampling_ThreadPriority = iParam;
-		New = true;
-	}
-
-	iParam = List_Resampling_SampleRate[Resampling_SampleRate->GetCurSel()];
-	if(ParamGlobal.Resampling_SampleRate != iParam) {
-		ParamGlobal.Resampling_SampleRate = iParam;
-		New = true;
-	}
-
-	iParam = Resampling_Quality->GetCurSel();
-	if(ParamGlobal.Resampling_Quality != iParam) {
-		ParamGlobal.Resampling_Quality = iParam;
-		New = true;
-	}
-
-	if(New) {
-		// only save if needed
-		WriteProfile();
-		if (pPcmAsio != NULL)
-		{
-		pPcmAsio->SetReOpen();
-		}
-	}
-
-	SDialog::CmOk();
-}
-

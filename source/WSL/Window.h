@@ -1,25 +1,25 @@
 
-struct
+/*struct
 StructSWindowAttr
 {
 	DWORD	Style;
-	DWORD	ExStyle;
-	HMENU	Menu;
-	HICON	Icon;
-	HCURSOR	Cursor;
-	HBRUSH	BackBrush;
-	LPCTSTR	DlgId;
-	int		Id;
+	//DWORD	ExStyle;
+	//HMENU	Menu;
+	//HICON	Icon;
+	//HCURSOR	Cursor;
+	//HBRUSH	BackBrush;
+	//LPCTSTR	DlgId;
+	//int		Id;
 	int		X;
 	int		Y;
 	int		W;
 	int		H;
-};
+};*/
 
 struct
 Org_Mes
 {
-	bool	AutoDelete;
+	//bool	AutoDelete;
 	int		ControlMode;
 	HWND	HWindow;
 	WNDPROC	OriginalWndProc;
@@ -40,7 +40,12 @@ public:
 	{
 		ControlMode_Normal, ControlMode_Control, ControlMode_Dialog,
 	};
-	StructSWindowAttr	Attr;
+	//StructSWindowAttr	Attr;
+	DWORD	Style;
+	int		X;
+	int		Y;
+	int		W;
+	int		H;
 	SWindow*	Parent;
 	HWND	HParentWindow;
 	HWND	HWindow;
@@ -64,9 +69,9 @@ public:
 	int		GetControlMode(void);
 
 	void	HookProc(HWND hwnd = NULL, bool Modeless = false);
-	bool	Create(void);
-	INT_PTR	Execute(void);
-	HPROPSHEETPAGE	CreatePropertySheetPage(LPPROPSHEETPAGE lppsp);
+	//bool	Create(void);
+	//INT_PTR	Execute(void);
+	//HPROPSHEETPAGE	CreatePropertySheetPage(LPPROPSHEETPAGE lppsp);
 	bool	Close(void);
 	bool	Destroy(int nResult = IDOK);
 	bool	DestroyWindow(void);
@@ -119,6 +124,8 @@ public:
 	HRESULT	RevokeDragDrop(void);
 	HRESULT	DrawThemeParentBackground(HDC hdc, RECT* prc = NULL);
 
+	static INT_PTR CALLBACK	SDialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
 private:
 	int		ControlMode;
 	bool	CreateModeless;
@@ -127,7 +134,7 @@ private:
 	void	Init(LPCTSTR caption, LPCTSTR classname, int id, int Control);
 	void	SetSubClass(void);
 	static LRESULT CALLBACK	SWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	static INT_PTR CALLBACK	SDialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	//static INT_PTR CALLBACK	SDialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	static INT_PTR CALLBACK	SDialogPropertySheetPageProc(
 													HWND hwnd,
 													UINT uMsg,
@@ -138,17 +145,17 @@ private:
 protected:
 	LPCTSTR	Caption;
 	LPCTSTR	ClassName;
-	bool	AutoDelete;
+	//bool	AutoDelete;
 
-	virtual void	SetupWindow(void);
+/*	virtual void	SetupWindow(void);
 	virtual LRESULT	WmUser(Org_Mes* OrgMes, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	virtual void	WmCommand(Org_Mes* OrgMes, int wNotifyCode, int wID, HWND hwndCtl);
 	virtual void	WmSysCommand(Org_Mes* OrgMes, UINT uCmdType, int xPos, int yPos);
 	virtual bool	WmAppCommand(Org_Mes* OrgMes, LPARAM lParam);
 	virtual LRESULT	WmNotify(Org_Mes* OrgMes, UINT id, LPNMHDR pnmh);
-	virtual LRESULT	WmCreate(Org_Mes* OrgMes, LPCREATESTRUCT lpcs);
+	virtual LRESULT	WmCreate(Org_Mes* OrgMes, LPCREATESTRUCT lpcs);*/
 	virtual bool	WmInitDialog(Org_Mes* OrgMes, HWND hwnd, LONG lInitParam);
-	virtual void	WmDestroy(Org_Mes* OrgMes);
+/*	virtual void	WmDestroy(Org_Mes* OrgMes);
 	virtual bool	WmQueryEndSession(Org_Mes* OrgMes, UINT nSource);
 	virtual void	WmEndSession(Org_Mes* OrgMes, bool fEndSession);
 	virtual void	WmShowWindow(Org_Mes* OrgMes, WPARAM wParam, LPARAM lParam);
@@ -176,12 +183,9 @@ protected:
 	virtual void	WmSetFocus(Org_Mes* OrgMes, HWND hwndLoseFocus);
 	virtual void	WmKillFocus(Org_Mes* OrgMes, HWND hwndGetFocus);
 	virtual void	WmSysColorChange(Org_Mes* OrgMes);
-/*
 	virtual HBRUSH	WmCtlColorDlg(Org_Mes* OrgMes, HWND hwndDlg, HDC hdcDlg);
 	virtual HBRUSH	WmCtlColorStatic(Org_Mes* OrgMes, HWND hwndStatic, HDC hdcStatic);
 	virtual HBRUSH	WmCtlColorEdit(Org_Mes* OrgMes, HWND hwndEdit, HDC hdcEdit);
 	virtual HBRUSH	WmCtlColorListBox(Org_Mes* OrgMes, HWND hwndLB, HDC hdcLB);
-	virtual	bool	WmEraseBkGnd(Org_Mes* OrgMes, HDC hdc);
-*/
+	virtual	bool	WmEraseBkGnd(Org_Mes* OrgMes, HDC hdc);*/
 };
-

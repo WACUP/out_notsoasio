@@ -18,7 +18,7 @@
 
 extern AsioDrivers*	asioDrivers;
 
-extern Out_Module	mod;
+extern Out_Module	plugin;
 
 extern PARAM_GLOBAL	ParamGlobal;
 
@@ -499,7 +499,7 @@ PcmAsio::OpenDriver(void)
 			if(asioDrivers->loadDriver(DriverName)) {
 					ASIODriverInfo	DriverInfo = {0};
 				DriverInfo.asioVersion = 2;
-				DriverInfo.sysRef = mod.hMainWindow;
+					DriverInfo.sysRef = plugin.hMainWindow;
 
 					if (ASIOInit(&DriverInfo) == ASE_OK) {
 						Setup();
@@ -966,7 +966,7 @@ PcmAsio::MsgCanWrite(void)
 				TotalWriteSize = _TotalWriteSize;
 			} else {
 				ReOpen = false;
-				::PostMessage(mod.hMainWindow, WM_COMMAND, 40047, 0);
+				::PostMessage(plugin.hMainWindow, WM_COMMAND, 40047, 0);
 				return 0;
 			}
 		}

@@ -16,6 +16,7 @@
 #include "pcmasio.h"
 #include <loader/loader/paths.h>
 #include <loader/loader/utils.h>
+#include <loader/loader/ini.h>
 #include <mmdeviceapi.h>
 #include <endpointvolume.h>
 #include <Functiondiscoverykeys_devpkey.h>
@@ -30,7 +31,9 @@ extern HINSTANCE	WSLhInstance;
 
 extern AsioDrivers*	asioDrivers;
 
-Out_Module	mod =
+prefsDlgRecW* output_prefs = NULL;
+
+Out_Module	plugin =
 {
 	OUT_VER_U,
 	(char *)NAME,
@@ -69,7 +72,7 @@ int volume = 255;
 extern "C" __declspec(dllexport) Out_Module* __cdecl
 	winampGetOutModule(void)
 	{
-		return &mod;
+	return &plugin;
 	}
 
 extern "C" __declspec(dllexport) void __cdecl
@@ -109,6 +112,49 @@ winampGetOutModeChange(int mode)
 			break;
 		}
 	}
+}
+
+INT_PTR CALLBACK CfgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	if (uMsg == WM_INITDIALOG)
+	{
+		DialogOption *dialog = new DialogOption(hwnd);
+		if (dialog)
+		{
+			dialog->SDialogProc(hwnd, uMsg, wParam, (LPARAM)dialog);
+		}
+	}
+	else if (uMsg == WM_DESTROY)
+	{
+		DialogOption *dialog = reinterpret_cast<DialogOption *>(::GetWindowLongPtr(hwnd, GWLP_USERDATA));
+		if (dialog != NULL)
+		{
+			SetWindowLongPtr(hwnd, GWLP_USERDATA, NULL);
+			delete dialog;
+		}
+	}
+	DialogLayout(hwnd, uMsg, lParam, MODE_GENERIC);
+	return 0;
+}
+
+extern "C" __declspec(dllexport) BOOL __cdecl
+winampGetOutPrefs(prefsDlgRecW* prefs)
+{
+	// this is called when the preferences window is being created
+	// and is used for the delayed registering of a native prefs
+	// page to be placed as a child of the 'Output' node (why not)
+	if (prefs)
+	{
+		// TODO localise
+		prefs->hInst = WSLhInstance;// WASABI_API_LNG_HINST;
+		prefs->dlgID = IDD_CONFIG;
+		prefs->name = _wcsdup(/*WASABI_API_LNGSTRINGW(IDS_ASIO)*/L"ASIO");
+		prefs->proc = CfgProc;
+		prefs->where = 9;
+		output_prefs = prefs;
+		return TRUE;
+	}
+	return FALSE;
 }
 
 LRESULT CALLBACK
@@ -281,29 +327,29 @@ void
 ReadProfile(void)
 {
 	ParamGlobal.Device =
-		::GetPrivateProfileIntW(INI_NAME, L"Device", 0, GetPaths()->plugin_ini_file);
+		GetNativeIniInt(PLUGIN_INI, INI_NAME, L"Device", 0);
 	ParamGlobal.ThreadPriority =
-		::GetPrivateProfileIntW(INI_NAME, L"ThreadPriority", 3, GetPaths()->plugin_ini_file);
+		GetNativeIniInt(PLUGIN_INI, INI_NAME, L"ThreadPriority", 3);
 	ParamGlobal.BufferSize =
-		::GetPrivateProfileIntW(INI_NAME, L"BufferSize", 7, GetPaths()->plugin_ini_file);
+		GetNativeIniInt(PLUGIN_INI, INI_NAME, L"BufferSize", 7);
 	ParamGlobal.ShiftChannels =
-		::GetPrivateProfileIntW(INI_NAME, L"ShiftChannels", 0, GetPaths()->plugin_ini_file);
+		GetNativeIniInt(PLUGIN_INI, INI_NAME, L"ShiftChannels", 0);
 	ParamGlobal.GaplessMode =
-		::GetPrivateProfileIntW(INI_NAME, L"GaplessMode", 1, GetPaths()->plugin_ini_file) != 0;
+		GetNativeIniInt(PLUGIN_INI, INI_NAME, L"GaplessMode", 1) != 0;
 	ParamGlobal.Convert1chTo2ch =
-		::GetPrivateProfileIntW(INI_NAME, L"Convert1chTo2ch", 1, GetPaths()->plugin_ini_file) != 0;
+		GetNativeIniInt(PLUGIN_INI, INI_NAME, L"Convert1chTo2ch", 1) != 0;
 	ParamGlobal.DirectInputMonitor =
-		::GetPrivateProfileIntW(INI_NAME, L"DirectInputMonitor", 0, GetPaths()->plugin_ini_file) != 0;
+		GetNativeIniInt(PLUGIN_INI, INI_NAME, L"DirectInputMonitor", 0) != 0;
 	ParamGlobal.Volume_Control =
-		::GetPrivateProfileIntW(INI_NAME, L"Volume_Control", 0, GetPaths()->plugin_ini_file) != 0;
+		GetNativeIniInt(PLUGIN_INI, INI_NAME, L"Volume_Control", 0) != 0;
 	ParamGlobal.Resampling_Enable =
-		::GetPrivateProfileIntW(INI_NAME, L"Resampling_Enable", 0, GetPaths()->plugin_ini_file) != 0;
+		GetNativeIniInt(PLUGIN_INI, INI_NAME, L"Resampling_Enable", 0) != 0;
 	ParamGlobal.Resampling_ThreadPriority =
-		::GetPrivateProfileIntW(INI_NAME, L"Resampling_ThreadPriority", 2, GetPaths()->plugin_ini_file);
+		GetNativeIniInt(PLUGIN_INI, INI_NAME, L"Resampling_ThreadPriority", 2);
 	ParamGlobal.Resampling_SampleRate =
-		::GetPrivateProfileIntW(INI_NAME, L"Resampling_SampleRate", 88200, GetPaths()->plugin_ini_file);
+		GetNativeIniInt(PLUGIN_INI, INI_NAME, L"Resampling_SampleRate", 88200);
 	ParamGlobal.Resampling_Quality =
-		::GetPrivateProfileIntW(INI_NAME, L"Resampling_Quality", 3, GetPaths()->plugin_ini_file);
+		GetNativeIniInt(PLUGIN_INI, INI_NAME, L"Resampling_Quality", 3);
 }
 
 void
@@ -312,46 +358,49 @@ WriteProfile(void)
 	wchar_t str[32];
 
 	_itow_s(ParamGlobal.Device, str, ARRAYSIZE(str), 10);
-	WritePrivateProfileStringW(INI_NAME, L"Device", str, GetPaths()->plugin_ini_file);
+	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"Device", str);
 
 	_itow_s(ParamGlobal.ThreadPriority, str, ARRAYSIZE(str), 10);
-	WritePrivateProfileStringW(INI_NAME, L"ThreadPriority", str, GetPaths()->plugin_ini_file);
+	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"ThreadPriority", str);
 
 	_itow_s(ParamGlobal.BufferSize, str, ARRAYSIZE(str), 10);
-	WritePrivateProfileStringW(INI_NAME, L"BufferSize", str, GetPaths()->plugin_ini_file);
+	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"BufferSize", str);
 
 	_itow_s(ParamGlobal.ShiftChannels, str, ARRAYSIZE(str), 10);
-	WritePrivateProfileStringW(INI_NAME, L"ShiftChannels", str, GetPaths()->plugin_ini_file);
+	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"ShiftChannels", str);
 
 	_itow_s(ParamGlobal.GaplessMode, str, ARRAYSIZE(str), 10);
-	WritePrivateProfileStringW(INI_NAME, L"GaplessMode", str, GetPaths()->plugin_ini_file);
+	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"GaplessMode", str);
 
 	_itow_s(ParamGlobal.Convert1chTo2ch, str, ARRAYSIZE(str), 10);
-	WritePrivateProfileStringW(INI_NAME, L"Convert1chTo2ch", str, GetPaths()->plugin_ini_file);
+	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"Convert1chTo2ch", str);
 
 	_itow_s(ParamGlobal.DirectInputMonitor, str, ARRAYSIZE(str), 10);
-	WritePrivateProfileStringW(INI_NAME, L"DirectInputMonitor", str, GetPaths()->plugin_ini_file);
+	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"DirectInputMonitor", str);
 
 	_itow_s(ParamGlobal.Volume_Control, str, ARRAYSIZE(str), 10);
-	WritePrivateProfileStringW(INI_NAME, L"Volume_Control", str, GetPaths()->plugin_ini_file);
+	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"Volume_Control", str);
 
 	_itow_s(ParamGlobal.Resampling_Enable, str, ARRAYSIZE(str), 10);
-	WritePrivateProfileStringW(INI_NAME, L"Resampling_Enable", str, GetPaths()->plugin_ini_file);
+	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"Resampling_Enable", str);
 
 	_itow_s(ParamGlobal.Resampling_ThreadPriority, str, ARRAYSIZE(str), 10);
-	WritePrivateProfileStringW(INI_NAME, L"Resampling_ThreadPriority", str, GetPaths()->plugin_ini_file);
+	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"Resampling_ThreadPriority", str);
 
 	_itow_s(ParamGlobal.Resampling_SampleRate, str, ARRAYSIZE(str), 10);
-	WritePrivateProfileStringW(INI_NAME, L"Resampling_SampleRate", str, GetPaths()->plugin_ini_file);
+	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"Resampling_SampleRate", str);
 
 	_itow_s(ParamGlobal.Resampling_Quality, str, ARRAYSIZE(str), 10);
-	WritePrivateProfileStringW(INI_NAME, L"Resampling_Quality", str, GetPaths()->plugin_ini_file);
+	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"Resampling_Quality", str);
 }
 
 void __cdecl
 Config(HWND hwndParent)
 {
-	DialogOption(hwndParent).Execute();
+	if (output_prefs != NULL)
+	{
+		PostMessage(plugin.hMainWindow, WM_WA_IPC, (WPARAM)output_prefs, IPC_OPENPREFSTOPAGE);
+}
 }
 
 void __cdecl
@@ -379,20 +428,20 @@ About(HWND hwndParent)
 					 L"you to install ASIO4ALL (https://asio4all.org/) to be able\n"
 					 L"to use this output plug-in. Otherwise different output "
 					 L"plug-ins may be better suited for your audio output.",
-					 (LPWSTR)mod.description, L"Darren Owen aka DrO", __DATE__, L"2.3.2");
+					 (LPWSTR)plugin.description, L"Darren Owen aka DrO", __DATE__, L"2.3.2");
 	AboutMessageBox(hwndParent, message, L"Not So ASIO"/*text*/);
 }
 
 void __cdecl
 Init(void)
 {
-	WSLhInstance = mod.hDllInstance;
+	WSLhInstance = plugin.hDllInstance;
 }
 
 void __cdecl
 Quit(void)
 {
-	UnSubclass(mod.hMainWindow, HookProc);
+	UnSubclass(plugin.hMainWindow, HookProc);
 
 	if (hThread != NULL)
 	{
@@ -446,7 +495,7 @@ Open(int samplerate, int numchannels, int bitspersamp, int bufferlenms, int preb
 		EventReadyThread = NULL;
 	}
 
-	Subclass(mod.hMainWindow, HookProc);
+	Subclass(plugin.hMainWindow, HookProc);
 
 	return ParamMsg(MSG_OPEN, samplerate, bitspersamp, numchannels).Call();
 	/*int ret = ParamMsg(MSG_OPEN, samplerate, bitspersamp, numchannels).Call();

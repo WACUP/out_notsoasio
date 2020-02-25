@@ -8,35 +8,16 @@
 #include "Window.h"
 #include "Dialog.h"
 
-SDialog::SDialog(SWindow* parent, LPCTSTR id) : SWindow(parent, NULL, NULL, 0, ControlMode_Dialog)
+SDialog::SDialog(HWND parent/*, int id*/) : SWindow(parent, NULL, NULL, 0, ControlMode_Dialog)
 {
-	Attr.DlgId = id;
-}
-
-SDialog::SDialog(SWindow* parent, int id) : SWindow(parent, NULL, NULL, 0, ControlMode_Dialog)
-{
-	Attr.DlgId = MAKEINTRESOURCE(id);
-}
-
-SDialog::SDialog(HWND parent, LPCTSTR id) : SWindow(parent, NULL, NULL, 0, ControlMode_Dialog)
-{
-	Attr.DlgId = id;
-}
-
-SDialog::SDialog(HWND parent, int id) : SWindow(parent, NULL, NULL, 0, ControlMode_Dialog)
-{
-	Attr.DlgId = MAKEINTRESOURCE(id);
-}
-
-SDialog::SDialog(void) : SWindow(ControlMode_Dialog)
-{
+	//Attr.DlgId = MAKEINTRESOURCE(id);
 }
 
 SDialog::~SDialog(void)
 {
 }
 
-void
+/*void
 SDialog::CmOk(void)
 {
 	Destroy(IDOK);
@@ -46,24 +27,6 @@ void
 SDialog::CmCancel(void)
 {
 	Destroy(IDCANCEL);
-}
-
-HRESULT
-SDialog::EnableThemeDialogTexture(DWORD dwFlags)
-{
-	return ::EnableThemeDialogTexture(HWindow, dwFlags);
-}
-
-bool
-SDialog::_PropSheet_Changed(void)
-{
-	return PropSheet_Changed(GetParent(), HWindow) != 0;
-}
-
-void
-SDialog::_PropSheet_SetTitle(WPARAM wStyle, LPCTSTR lpszText)
-{
-	PropSheet_SetTitle(HWindow, wStyle, lpszText);
 }
 
 bool
@@ -111,5 +74,4 @@ SDialog::WmCommand(Org_Mes* OrgMes, int wNotifyCode, int wID, HWND hwndCtl)
 			break;
 		}
 	}
-}
-
+}*/

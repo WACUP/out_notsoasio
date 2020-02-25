@@ -57,18 +57,18 @@ SWindow::Init(LPCTSTR caption, LPCTSTR classname, int id, int Control)
 
 	ControlMode = Control;
 
-	Attr.Id = id;
-	Attr.Style = WS_VISIBLE;
-	Attr.ExStyle = 0;
-	Attr.Menu = NULL;
-	Attr.Icon = ::LoadIcon(NULL, IDI_APPLICATION);
-	Attr.Cursor = ::LoadCursor(NULL, IDC_ARROW);
-	Attr.BackBrush = static_cast<HBRUSH>(::GetStockObject(WHITE_BRUSH));
+	//Attr.Id = id;
+	Style = WS_VISIBLE;
+	//Attr.ExStyle = 0;
+	//Attr.Menu = NULL;
+	//Attr.Icon = ::LoadIcon(NULL, IDI_APPLICATION);
+	//Attr.Cursor = ::LoadCursor(NULL, IDC_ARROW);
+	//Attr.BackBrush = static_cast<HBRUSH>(::GetStockObject(WHITE_BRUSH));
 
-	Attr.X = CW_USEDEFAULT;
-	Attr.Y = CW_USEDEFAULT;
-	Attr.W = CW_USEDEFAULT;
-	Attr.H = CW_USEDEFAULT;
+	X = CW_USEDEFAULT;
+	Y = CW_USEDEFAULT;
+	W = CW_USEDEFAULT;
+	H = CW_USEDEFAULT;
 
 	HWindow = NULL;
 	OriginalWndProc = NULL;
@@ -76,10 +76,10 @@ SWindow::Init(LPCTSTR caption, LPCTSTR classname, int id, int Control)
 	if(Parent &&
 			(ControlMode == ControlMode_Control) &&
 			(Parent->GetControlMode() == ControlMode_Dialog)) {
-		HWindow = Parent->GetDlgItem(Attr.Id);
+		HWindow = Parent->GetDlgItem(/*Attr.Id*/id);
 	}
 
-	AutoDelete = false;
+	//AutoDelete = false;
 }
 
 int
@@ -101,7 +101,7 @@ SWindow::HookProc(HWND hwnd, bool Modeless)
 	SetSubClass();
 }
 
-bool
+/*bool
 SWindow::Create(void)
 {
 	CreateModeless = true;
@@ -187,7 +187,7 @@ SWindow::CreatePropertySheetPage(LPPROPSHEETPAGE lppsp)
 	lppsp->lParam = reinterpret_cast<LPARAM>(this);
 
 	return ::CreatePropertySheetPage(lppsp);
-}
+}*/
 
 void
 SWindow::SetSubClass(void)
@@ -199,7 +199,7 @@ SWindow::SetSubClass(void)
 				GWLP_WNDPROC,
 				(ControlMode == ControlMode_Dialog) ? PtrToLong(SDialogProc) : PtrToLong(SWindowProc));
 
-	SetupWindow();
+	//SetupWindow();
 }
 
 LRESULT CALLBACK
@@ -249,7 +249,7 @@ SWindow::SDialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return RetCode;
 }
 
-INT_PTR CALLBACK
+/*INT_PTR CALLBACK
 SWindow::SDialogPropertySheetPageProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	SWindow*	SWindowClass;
@@ -270,7 +270,7 @@ SWindow::SDialogPropertySheetPageProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
 	}
 
 	return RetCode;
-}
+}*/
 
 LRESULT
 SWindow::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -279,7 +279,7 @@ SWindow::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	Org_Mes	OrgMes;
 
-	OrgMes.AutoDelete      = AutoDelete;
+	//OrgMes.AutoDelete      = AutoDelete;
 	OrgMes.ControlMode     = ControlMode;
 	OrgMes.HWindow         = hwnd;
 	OrgMes.OriginalWndProc = OriginalWndProc;
@@ -295,7 +295,7 @@ SWindow::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	LRESULT	RetCode;
 
 	switch(uMsg) {
-	case WM_COMMAND:
+	/*case WM_COMMAND:
 		WmCommand(&OrgMes, HIWORD(wParam), LOWORD(wParam), reinterpret_cast<HWND>(lParam));
 		break;
 	case WM_SYSCOMMAND:
@@ -383,7 +383,6 @@ SWindow::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_KILLFOCUS:
 		WmKillFocus(&OrgMes, reinterpret_cast<HWND>(wParam));
 		break;
-/*
 	case WM_CTLCOLORDLG:
 		RetMessage = true;
 		RetCode = reinterpret_cast<LRESULT>
@@ -412,17 +411,17 @@ SWindow::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		RetMessage = true;
 		RetCode = WmEraseBkGnd(&OrgMes, reinterpret_cast<HDC>(wParam));
 		break;
-*/
 	case WM_CREATE:
 		RetMessage = true;
 		RetCode = WmCreate(&OrgMes, reinterpret_cast<LPCREATESTRUCT>(lParam));
-		SetupWindow();
+		//SetupWindow();
 		break;
+*/
 	case WM_INITDIALOG:
 		RetMessage = true;
 		RetCode = WmInitDialog(&OrgMes, reinterpret_cast<HWND>(wParam), static_cast<LONG>(lParam));
 		break;
-	case WM_CLOSE:
+	/*case WM_CLOSE:
 		WmClose(&OrgMes);
 		break;
 	case WM_DESTROY:
@@ -445,12 +444,12 @@ SWindow::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			SetWindowLongPtr(GWLP_USERDATA, NULL);
 			delete this;
 		}
-		break;
+		break;*/
 	default:
-		if((uMsg >= WM_USER) && (uMsg <= 0x7fff)) {
+		/*if((uMsg >= WM_USER) && (uMsg <= 0x7fff)) {
 			RetMessage = true;
 			RetCode = WmUser(&OrgMes, uMsg, wParam, lParam);
-		} else {
+		} else*/ {
 			DefaultProc(&OrgMes);
 		}
 		break;
@@ -486,11 +485,11 @@ SWindow::DefaultProc(Org_Mes* OrgMes)
 	return OrgMes->RetProcCode;
 }
 
-bool
+/*bool
 SWindow::Close(void)
 {
 	return PostMessage(WM_CLOSE) != 0;
-}
+}*/
 
 bool
 SWindow::Destroy(int nResult)
@@ -522,7 +521,7 @@ SWindow::EndDialog(int nResult)
 	return ::EndDialog(HWindow, nResult) != 0;
 }
 
-bool
+/*bool
 SWindow::PeekMessage(LPMSG lpmsg, UINT uMsgFilterMin, UINT uMsgFilterMax, UINT wRemoveMsg)
 {
 	return ::PeekMessage(lpmsg, HWindow, uMsgFilterMin, uMsgFilterMax, wRemoveMsg) != 0;
@@ -577,7 +576,7 @@ bool
 SWindow::GetClientRect(LPRECT lprc)
 {
 	return ::GetClientRect(HWindow, lprc) != 0;
-}
+}*/
 
 bool
 SWindow::GetWindowRect(LPRECT lprc)
@@ -597,7 +596,7 @@ SWindow::GetWindowLongPtr(int nIndex)
 	return ::GetWindowLongPtr(HWindow, nIndex);
 }
 
-ULONG_PTR
+/*ULONG_PTR
 SWindow::SetClassLongPtr(int nIndex, LONG_PTR lNewVal)
 {
 	return ::SetClassLongPtr(HWindow, nIndex, lNewVal);
@@ -649,7 +648,7 @@ HWND
 SWindow::SetActiveWindow(void)
 {
 	return ::SetActiveWindow(HWindow);
-}
+}*/
 
 LRESULT
 SWindow::SendMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -663,7 +662,7 @@ SWindow::PostMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return ::PostMessage(HWindow, uMsg, wParam, lParam);
 }
 
-void
+/*void
 SWindow::SetRedraw(bool redraw)
 {
 	SendMessage(WM_SETREDRAW, redraw);
@@ -673,7 +672,7 @@ int
 SWindow::MessageBox(LPCTSTR lpszText, LPCTSTR lpszTitle, UINT fuStyle)
 {
 	return ::MessageBox(HWindow, lpszText, lpszTitle, fuStyle);
-}
+}*/
 
 HWND
 SWindow::GetParent(void)
@@ -681,7 +680,7 @@ SWindow::GetParent(void)
 	return ::GetParent(HWindow);
 }
 
-HWND
+/*HWND
 SWindow::GetWindow(UINT uCmd)
 {
 	return ::GetWindow(HWindow, uCmd);
@@ -721,7 +720,7 @@ void
 SWindow::DragAcceptFiles(bool fAccept)
 {
 	::DragAcceptFiles(HWindow, fAccept);
-}
+}*/
 
 bool
 SWindow::IsWindow(void)
@@ -729,11 +728,11 @@ SWindow::IsWindow(void)
 	return ::IsWindow(HWindow) != 0;
 }
 
-bool
+/*bool
 SWindow::IsWindowEnabled(void)
 {
 	return ::IsWindowEnabled(HWindow) != 0;
-}
+}*/
 
 HWND
 SWindow::GetDlgItem(int idControl)
@@ -741,7 +740,7 @@ SWindow::GetDlgItem(int idControl)
 	return ::GetDlgItem(HWindow, idControl);
 }
 
-void
+/*void
 SWindow::SetWindowText(LPCTSTR lpsz)
 {
 	::SetWindowText(HWindow, lpsz);
@@ -828,8 +827,9 @@ SWindow::DrawThemeParentBackground(HDC hdc, RECT* prc)
 void
 SWindow::SetupWindow(void)
 {
-}
+}*/
 
+#if 0
 LRESULT
 SWindow::WmUser(Org_Mes* OrgMes, UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/)
 {
@@ -865,6 +865,7 @@ SWindow::WmCreate(Org_Mes* OrgMes, LPCREATESTRUCT /*lpcs*/)
 {
 	return DefaultProc(OrgMes);
 }
+#endif
 
 bool
 SWindow::WmInitDialog(Org_Mes* OrgMes, HWND /*hwnd*/, LONG /*lInitParam*/)
@@ -872,6 +873,7 @@ SWindow::WmInitDialog(Org_Mes* OrgMes, HWND /*hwnd*/, LONG /*lInitParam*/)
 	return DefaultProc(OrgMes) != 0;
 }
 
+#if 0
 void
 SWindow::WmDestroy(Org_Mes* OrgMes)
 {
@@ -901,8 +903,8 @@ SWindow::WmSize(Org_Mes* OrgMes, UINT /*sizeType*/, int w, int h)
 {
 	DefaultProc(OrgMes);
 
-	Attr.W = w;
-	Attr.H = h;
+	W = w;
+	H = h;
 }
 
 void
@@ -910,8 +912,8 @@ SWindow::WmMove(Org_Mes* OrgMes, int xPos, int yPos)
 {
 	DefaultProc(OrgMes);
 
-	Attr.X = xPos;
-	Attr.Y = yPos;
+	X = xPos;
+	Y = yPos;
 }
 
 void
@@ -1055,8 +1057,6 @@ SWindow::WmSysColorChange(Org_Mes* OrgMes)
 	DefaultProc(OrgMes);
 }
 
-/*
-
 HBRUSH
 SWindow::WmCtlColorDlg(Org_Mes* OrgMes, HWND hwndDlg HDC hdcDlg)
 {
@@ -1086,5 +1086,5 @@ SWindow::WmEraseBkGnd(Org_Mes* OrgMes, HDC hdc)
 {
 	return DefaultProc(OrgMes) != 0;
 }
-*/
+#endif
 

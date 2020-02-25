@@ -81,9 +81,6 @@
     <ClCompile Include="WSL\Control.cpp">
       <Filter>WSL</Filter>
     </ClCompile>
-    <ClCompile Include="WSL\Dialog.cpp">
-      <Filter>WSL</Filter>
-    </ClCompile>
     <ClCompile Include="WSL\UpDown.cpp">
       <Filter>WSL</Filter>
     </ClCompile>
@@ -168,9 +165,6 @@
       <Filter>WSL</Filter>
     </ClInclude>
     <ClInclude Include="WSL\Control.h">
-      <Filter>WSL</Filter>
-    </ClInclude>
-    <ClInclude Include="WSL\Dialog.h">
       <Filter>WSL</Filter>
     </ClInclude>
     <ClInclude Include="Wsl\StdProc.h">
