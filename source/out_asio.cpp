@@ -31,6 +31,8 @@ extern HINSTANCE	WSLhInstance;
 
 extern AsioDrivers*	asioDrivers;
 
+extern CRITICAL_SECTION	CriticalSection;
+
 prefsDlgRecW* output_prefs = NULL;
 
 Out_Module	plugin =
@@ -108,6 +110,7 @@ winampGetOutModeChange(int mode)
 			{
 				Loaded = true;
 				ReadProfile();
+				::InitializeCriticalSection(&CriticalSection);
 			}
 			break;
 		}
@@ -118,6 +121,11 @@ INT_PTR CALLBACK CfgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	if (uMsg == WM_INITDIALOG)
 	{
+		// incase the user only goes to the
+		// config, this ensure we've setup
+		// correctly otherwise all crashes
+		winampGetOutModeChange(OUT_SET);
+
 		DialogOption *dialog = new DialogOption(hwnd);
 		if (dialog)
 		{
@@ -466,6 +474,11 @@ Quit(void)
 	{
 	::CloseHandle(EventDestroyThread);
 		EventDestroyThread = NULL;
+	}
+
+	if (Loaded)
+	{
+		::DeleteCriticalSection(&CriticalSection);
 	}
 }
 

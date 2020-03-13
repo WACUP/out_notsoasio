@@ -309,7 +309,7 @@ BufferSwitch(long index, ASIOBool directProcess)
 inline void
 ResetAsioBuff(const int index, const int CopySamples)
 {
-	if (BufferInfo != NULL && ChannelInfo != NULL)
+	if ((BufferInfo != NULL) && (ChannelInfo != NULL))
 	{
 	const int	SetSamples = PreferredSize - CopySamples;
 		if (SetSamples > 0)
@@ -331,7 +331,7 @@ ResetAsioBuff(const int index, const int CopySamples)
 inline void
 ToAsioBuff(const int index, const int CopySamples)
 {
-	if (BufferInfo != NULL && ChannelInfo != NULL)
+	if ((BufferInfo != NULL) && (ChannelInfo != NULL))
 	{
 	for(UINT Idx = 0; Idx < FormatInfo.Nch; Idx++) {
 		const int	Bps_b = ChannelInfo[Idx].Bps_b;
@@ -347,7 +347,7 @@ ToAsioBuff(const int index, const int CopySamples)
 inline void
 ToAsioBuffOverRun(const int index, const int MaxCopySamples)
 {
-	if (BufferInfo != NULL && ChannelInfo != NULL)
+	if ((BufferInfo != NULL) && (ChannelInfo != NULL))
 	{
 	const int	CopySamples1 = BuffPreferredSize - BuffStart;
 	const int	CopySamples2 = MaxCopySamples - BuffPreferredSize;
@@ -425,8 +425,6 @@ BufferSwitchTimeInfo(ASIOTime* timeInfo, long index, ASIOBool directProcess)
 
 PcmAsio::PcmAsio(void)
 {
-	::InitializeCriticalSection(&CriticalSection);
-
 	Timer::Init();
 
 	EventDestroySSRC_Thread = ::CreateEvent(NULL, false, false, NULL);
@@ -481,8 +479,6 @@ PcmAsio::~PcmAsio(void)
 	::CloseHandle(EventDestroySSRC_Thread);
 		EventDestroySSRC_Thread = NULL;
 	}
-
-	::DeleteCriticalSection(&CriticalSection);
 }
 
 inline bool
@@ -872,7 +868,7 @@ PcmAsio::MsgOpen(UINT sr, int _bps, UINT nch)
 		ResetAsioBuff(1, 0);*/
 	}
 
-	if(ChangeFormat || ChangeBps || ChangeNch) {
+	if((ChangeFormat || ChangeBps || ChangeNch) && (ChannelInfo != NULL)) {
 		for(UINT Idx = 0; Idx < nch; Idx++) {
 			ChannelInfo[Idx].ToBuffFunc = SetToBuffFuc(ChannelInfo[Idx].Type, format, bps);
 		}
@@ -929,12 +925,15 @@ PcmAsio::Close(void)
 		InitBuff = false;
 	}
 
+	if (ChannelInfo != NULL)
+	{
 	for(UINT Idx = 0; Idx < DeviceNch; Idx++) {
 		if(ChannelInfo[Idx].Buff) {
 			delete[] ChannelInfo[Idx].Buff;
 			ChannelInfo[Idx].Buff = NULL;
 		}
 	}
+}
 }
 
 void
@@ -1238,7 +1237,7 @@ PcmAsio::MsgGetWrittenTime(void)
 inline unsigned char*
 PcmAsio::ToBuff(unsigned char* ReadPnt)
 {
-	if (ReadPnt) {
+	if (ReadPnt && (ChannelInfo != NULL)) {
 	for(UINT Idx = 0; Idx < FormatInfo.Nch; Idx++) {
 		ChannelInfo[Idx].ToBuffFunc(Idx, ReadPnt);
 		if((EnableConvert1chTo2ch == false) || (Idx == 1)) ReadPnt += FormatInfo.Bps_b;
