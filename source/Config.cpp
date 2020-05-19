@@ -56,11 +56,13 @@ DialogOption::~DialogOption(void)
 		New = true;
 	}
 
+#ifdef USE_GAPLESS_MODE
 	bParam = GaplessMode->GetCheck() == BF_CHECKED;
 	if (ParamGlobal.GaplessMode != bParam) {
 		ParamGlobal.GaplessMode = bParam;
 		New = true;
 	}
+#endif
 
 	bParam = Convert1chTo2ch->GetCheck() == BF_CHECKED;
 	if (ParamGlobal.Convert1chTo2ch != bParam) {
@@ -119,7 +121,9 @@ DialogOption::~DialogOption(void)
 	delete ThreadPriority;
 	delete BufferSizeUpDown;
 	delete ShiftChannelsUpDown;
+#ifdef USE_GAPLESS_MODE
 	delete GaplessMode;
+#endif
 	delete Convert1chTo2ch;
 	delete DirectInputMonitor;
 	delete Volume_Control;
@@ -149,7 +153,9 @@ DialogOption::WmInitDialog(Org_Mes* OrgMes, HWND hwnd, LONG lInitParam)
 	ThreadPriority = new SComboBox(this, IDC_THREAD_PRIORITY);
 	BufferSizeUpDown = new SUpDown(this, IDC_BUFFER_SIZE_UPDOWN);
 	ShiftChannelsUpDown = new SUpDown(this, IDC_SHIFT_CHANNELS_UPDOWN);
+#ifdef USE_GAPLESS_MODE
 	GaplessMode = new SButton(this, IDC_GAPLESS_MODE, BS_CHECKBOX);
+#endif
 	Convert1chTo2ch = new SButton(this, IDC_CONVERT_1CH_TO_2CH, BS_CHECKBOX);
 	DirectInputMonitor = new SButton(this, IDC_DIRECT_INPUT_MONITOR, BS_CHECKBOX);
 	Volume_Control = new SButton(this, IDC_VOLUME_CONTROL, BS_CHECKBOX);
@@ -194,9 +200,11 @@ DialogOption::WmInitDialog(Org_Mes* OrgMes, HWND hwnd, LONG lInitParam)
 	ShiftChannelsUpDown->SetRange(0, 99);
 	ShiftChannelsUpDown->SetPos(ParamGlobal.ShiftChannels);
 
+#ifdef USE_GAPLESS_MODE
 	if(ParamGlobal.GaplessMode) {
 		GaplessMode->Check();
 	}
+#endif
 
 	if(ParamGlobal.Convert1chTo2ch) {
 		Convert1chTo2ch->Check();

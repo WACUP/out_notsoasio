@@ -175,11 +175,11 @@ HookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
 	return DefSubclass(hWnd, uMsg, wParam, lParam);
 }
 
-unsigned int __stdcall
+DWORD CALLBACK
 ThreadProc(void* /*Param*/)
 {
-	MSG		Msg = {0};
-	::PeekMessage(&Msg, NULL, WM_USER, WM_USER, PM_NOREMOVE);
+	/*MSG Msg = {0};
+	::PeekMessage(&Msg, NULL, WM_USER, WM_USER, PM_NOREMOVE);*/
 
 	if (asioDrivers == NULL)
 	{
@@ -202,12 +202,25 @@ ThreadProc(void* /*Param*/)
 	delete pPcmAsio;
 			pPcmAsio = NULL;
 		}
+		else
+		{
+			::SetEvent(EventReadyThread);
+		}
 
 	delete asioDrivers;
 		asioDrivers = NULL;
 	}
+	else
+	{
+		::SetEvent(EventReadyThread);
+	}
 
-	_endthreadex(0);
+	//_endthreadex(0);
+	if (hThread != NULL)
+	{
+		CloseHandle(hThread);
+		hThread = NULL;
+	}
 	return 0;
 }
 
@@ -215,41 +228,76 @@ void CALLBACK
 ApcProc(ULONG_PTR dwParam)
 {
 	ParamMsg* const	Param = reinterpret_cast<ParamMsg*>(dwParam);
-	if (pPcmAsio != NULL) {
+	if ((Param != NULL) && (pPcmAsio != NULL)) {
 	switch(Param->Msg) {
 	case MSG_OPEN:
+			{
+				Param->RetMsg = pPcmAsio->MsgOpen(Param->Param1, Param->Param2, Param->Param3);
+				// this seems to help with live device switching
+				// but some drivers (realtek) are just a mess :(
+				if (Param->RetMsg == -1) {
+					pPcmAsio->MsgClose();
+
 		Param->RetMsg = pPcmAsio->MsgOpen(Param->Param1, Param->Param2, Param->Param3);
+					if (Param->RetMsg != -1) {
+						// calling this does something that helps
+						// to get realtek asio devices working :)
+						pPcmAsio->SetReOpen();
+					}
+				}
+				else {
+					// calling this does something that helps
+					// to get realtek asio devices working :)
+					pPcmAsio->SetReOpen();
+				}
 		break;
+			}
 	case MSG_CLOSE:
+			{
 		pPcmAsio->MsgClose();
+
 			// this makes sure ThreadProc
 			// will exit out of it's wait
-			if (EventDestroyThread != NULL)
-			{
+				if (EventDestroyThread != NULL) {
 				::SetEvent(EventDestroyThread);
 			}
 		break;
+			}
 	case MSG_WRITE:
+			{
 		Param->RetMsg = pPcmAsio->MsgWrite(Param->Param1, Param->Buff);
 		break;
+			}
 	case MSG_CAN_WRITE:
+			{
 		Param->RetMsg = pPcmAsio->MsgCanWrite();
 		break;
+			}
 	case MSG_IS_PLAYING:
+			{
 		Param->RetMsg = pPcmAsio->MsgIsPlaying();
 		break;
+			}
 	case MSG_PAUSE:
+			{
 		Param->RetMsg = pPcmAsio->MsgPause(Param->Param1);
 		break;
+			}
 	case MSG_FLUSH:
+			{
 		pPcmAsio->MsgFlush(Param->Param1);
 		break;
+			}
 //	case MSG_GET_OUTPUTTIME:
+	//		{
 //		Param->RetMsg = pPcmAsio->MsgGetOutputTime();
 //		break;
+	//		}
 //	case MSG_GET_WRITTENTIME:
+	//		{
 //		Param->RetMsg = pPcmAsio->MsgGetWrittenTime();
 //		break;
+	//		}
 	}
 	}
 
@@ -293,16 +341,6 @@ ParamMsg::ParamMsg(const int _Msg, const int _Param1, unsigned char* _Buff)
 	EventWaitThread = NULL;
 }
 
-ParamMsg::~ParamMsg(void)
-{
-	if (EventWaitThread != NULL)
-	{
-		::WaitForSingleObject(EventWaitThread, INFINITE);
-		::CloseHandle(EventWaitThread);
-		EventWaitThread = NULL;
-	}
-}
-
 int
 ParamMsg::Call(void)
 {
@@ -315,7 +353,12 @@ ParamMsg::Call(void)
 	{
 		::QueueUserAPC(&ApcProc, hThread, reinterpret_cast<ULONG_PTR>(this));
 
-		::WaitForSingleObject(EventWaitThread, INFINITE);
+		// changing this to not wait forever
+		// is because driver issues & other
+		// things can cause calls to hang &
+		// that will eventually kill the ui
+		// thread & bring down the process.
+		::WaitForSingleObject(EventWaitThread, 250/*/INFINITE/**/);
 		::CloseHandle(EventWaitThread);
 		EventWaitThread = NULL;
 	}
@@ -325,8 +368,7 @@ ParamMsg::Call(void)
 void
 ParamMsg::UnPause(void)
 {
-	if (EventWaitThread != NULL)
-	{
+	if (EventWaitThread != NULL) {
 	::SetEvent(EventWaitThread);
 }
 }
@@ -342,8 +384,10 @@ ReadProfile(void)
 		GetNativeIniInt(PLUGIN_INI, INI_NAME, L"BufferSize", 7);
 	ParamGlobal.ShiftChannels =
 		GetNativeIniInt(PLUGIN_INI, INI_NAME, L"ShiftChannels", 0);
+#ifdef USE_GAPLESS_MODE
 	ParamGlobal.GaplessMode =
 		GetNativeIniInt(PLUGIN_INI, INI_NAME, L"GaplessMode", 1) != 0;
+#endif
 	ParamGlobal.Convert1chTo2ch =
 		GetNativeIniInt(PLUGIN_INI, INI_NAME, L"Convert1chTo2ch", 1) != 0;
 	ParamGlobal.DirectInputMonitor =
@@ -377,8 +421,10 @@ WriteProfile(void)
 	_itow_s(ParamGlobal.ShiftChannels, str, ARRAYSIZE(str), 10);
 	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"ShiftChannels", str);
 
+#ifdef USE_GAPLESS_MODE
 	_itow_s(ParamGlobal.GaplessMode, str, ARRAYSIZE(str), 10);
 	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"GaplessMode", str);
+#endif
 
 	_itow_s(ParamGlobal.Convert1chTo2ch, str, ARRAYSIZE(str), 10);
 	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"Convert1chTo2ch", str);
@@ -458,11 +504,11 @@ Quit(void)
 	::SetEvent(EventDestroyThread);
 		}
 
-		if (::WaitForSingleObject(hThread, INFINITE) != WAIT_OBJECT_0)
+		if (::WaitForSingleObject(hThread, 1000/*INFINITE*/) != WAIT_OBJECT_0)
 		{
 			if (::TerminateThread(hThread, 0))
 			{
-				::WaitForSingleObject(hThread, INFINITE);
+				::WaitForSingleObject(hThread, 1000/*INFINITE*/);
 		}
 	}
 
@@ -487,8 +533,6 @@ Open(int samplerate, int numchannels, int bitspersamp, int bufferlenms, int preb
 {
 	PlayEOF = false;
 
-	unsigned int dwThread = 0;
-
 	if (EventReadyThread == NULL)
 	{
 		EventReadyThread = ::CreateEvent(NULL, false, false, NULL);
@@ -499,8 +543,13 @@ Open(int samplerate, int numchannels, int bitspersamp, int bufferlenms, int preb
 		EventDestroyThread = ::CreateEvent(NULL, false, false, NULL);
 	}
 
-	hThread = reinterpret_cast<HANDLE>(_beginthreadex(NULL, 0, ThreadProc, NULL, 0, &dwThread));
+	hThread = CreateThread(NULL, 0, ThreadProc, NULL, 0, NULL);
 
+	//unsigned int dwThread = 0;
+	//hThread = reinterpret_cast<HANDLE>(_beginthreadex(NULL, 0, ThreadProc, NULL, 0, &dwThread));
+
+	if (hThread != NULL)
+	{
 	if (EventReadyThread != NULL)
 	{
 		::WaitForSingleObject(EventReadyThread, INFINITE);
@@ -508,15 +557,14 @@ Open(int samplerate, int numchannels, int bitspersamp, int bufferlenms, int preb
 		EventReadyThread = NULL;
 	}
 
-	Subclass(plugin.hMainWindow, HookProc);
-
-	return ParamMsg(MSG_OPEN, samplerate, bitspersamp, numchannels).Call();
-	/*int ret = ParamMsg(MSG_OPEN, samplerate, bitspersamp, numchannels).Call();
+		const int ret = ParamMsg(MSG_OPEN, samplerate, bitspersamp, numchannels).Call();
 	if (ret >= 0)
 	{
-		SetVolume(-666);
+			Subclass(plugin.hMainWindow, HookProc);
+			return 0;
+		}
 	}
-	return ret;*/
+	return -1;
 }
 
 void __cdecl

@@ -6,13 +6,15 @@
 
 #include "WaitForObject.h"
 
-#define	VER			L"1.2.2"
+#define	VER			L"1.3"
 #define	NAME		L"Not So ASIO v" VER
 #define	INI_NAME	L"Not So ASIO"
 
+//#ifdef USE_GAPLESS_MODE
+
 LRESULT CALLBACK	HookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
 							 UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
-unsigned int __stdcall	ThreadProc(void* Param);
+DWORD CALLBACK ThreadProc(void* Param);
 void CALLBACK	ApcProc(ULONG_PTR dwParam);
 
 void	ReadProfile(void);
@@ -36,13 +38,13 @@ int __cdecl	GetWrittenTime(void);
 
 enum
 {
-	MSG_OPEN,
-	MSG_CLOSE,
-	MSG_WRITE,
-	MSG_CAN_WRITE,
-	MSG_IS_PLAYING,
-	MSG_PAUSE,
-	MSG_FLUSH,
+	MSG_OPEN,		// 0
+	MSG_CLOSE,		// 1
+	MSG_WRITE,		// 2
+	MSG_CAN_WRITE,	// 3
+	MSG_IS_PLAYING,	// 4
+	MSG_PAUSE,		// 5
+	MSG_FLUSH,		// 6
 	//MSG_GET_OUTPUTTIME,
 	//MSG_GET_WRITTENTIME,
 };
@@ -54,7 +56,9 @@ PARAM_GLOBAL
 	int		ThreadPriority;
 	int		BufferSize;
 	UINT	ShiftChannels;
+#ifdef USE_GAPLESS_MODE
 	bool	GaplessMode;
+#endif
 	bool	Convert1chTo2ch;
 	bool	DirectInputMonitor;
 	bool	Volume_Control;
@@ -79,7 +83,7 @@ public:
 	ParamMsg(const int _Msg, const int _Param1);
 	ParamMsg(const int _Msg, const int _Param1, const int _Param2, const int _Param3);
 	ParamMsg(const int _Msg, const int _Param1, unsigned char* _Buff);
-	~ParamMsg(void);
+	~ParamMsg(void) {}
 
 	int		Call(void);
 	void	UnPause(void);

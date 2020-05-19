@@ -235,7 +235,10 @@ SSRC_Msg::GetDataInOutbuf(void)
 UINT
 SSRC_Msg::Call(void)
 {
+	if (EventWaitThread == NULL)
+	{
 	EventWaitThread = ::CreateEvent(NULL, false, false, NULL);
+	}
 
 	::QueueUserAPC(&SSRC_ApcProc, hSSRC_Thread, reinterpret_cast<ULONG_PTR>(this));
 	if (EventWaitThread != NULL)
@@ -573,7 +576,9 @@ PcmAsio::Setup(void)
 
 	ShiftChannels = ParamGlobal.ShiftChannels;
 
+#ifdef USE_GAPLESS_MODE
 	GaplessMode = ParamGlobal.GaplessMode;
+#endif
 
 	Convert1chTo2ch = ParamGlobal.Convert1chTo2ch;
 	EnableConvert1chTo2ch = false;

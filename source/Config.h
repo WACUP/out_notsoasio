@@ -23,7 +23,9 @@ private:
 	SComboBox*	ThreadPriority;
 	SUpDown*	BufferSizeUpDown;
 	SUpDown*	ShiftChannelsUpDown;
+#ifdef USE_GAPLESS_MODE
 	SButton*	GaplessMode;
+#endif
 	SButton*	Convert1chTo2ch;
 	SButton*	DirectInputMonitor;
 	SButton*	Volume_Control;
