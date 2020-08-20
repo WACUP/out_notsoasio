@@ -4,11 +4,13 @@
 #include <../host/asiodrivers.h>
 
 #include "Timer.h"
+#ifdef USE_SSRC_MODE
 #include "ssrc/ssrc.h"
+#endif
 #include "ToBuff_MSB.h"
 #include "ToBuff_LSB.h"
 
-#define	BUFFER_SIZE			4
+#define	BUFFER_SIZE			8	// this was 4 but it broke 320kbps mp3 playback
 #define	MAX_BPS				64
 
 #define	SSRC_MAX_LATENCY	8000
@@ -23,8 +25,10 @@
 #define	FSCALER24			static_cast<double>(ISCALER24)
 #define	FSCALER32			static_cast<double>(ISCALER32)
 
-unsigned int __stdcall	SSRC_ThreadProc(void* Param);
+#ifdef USE_SSRC_MODE
+DWORD CALLBACK	SSRC_ThreadProc(void* Param);
 void CALLBACK	SSRC_ApcProc(ULONG_PTR dwParam);
+#endif
 
 ASIOError	_ASIOStop(void);
 
@@ -37,6 +41,7 @@ inline void	ResetAsioBuff(const int index, const int CopySamples);
 inline void	ToAsioBuff(const int index, const int CopySamples);
 inline void	ToAsioBuffOverRun(const int index, const int MaxCopySamples);
 
+#ifdef USE_SSRC_MODE
 enum
 {
 	SSRC_CREATE,
@@ -48,6 +53,7 @@ enum
 	SSRC_FLUSH,
 	SSRC_GET_DATA_IN_OUT_BUF,
 };
+#endif
 
 struct
 _FormatInfo
@@ -73,6 +79,7 @@ _ChannelInfo
 	TO_BUFF_FUNC	ToBuffFunc;
 };
 
+#ifdef USE_SSRC_MODE
 class
 SSRC_Msg
 {
@@ -116,6 +123,7 @@ private:
 
 	UINT	Call(void);
 };
+#endif
 
 class
 PcmAsio
@@ -162,6 +170,7 @@ private:
 	bool	NowPause;
 	__int64	PauseTime;
 
+#ifdef USE_SSRC_MODE
 	SSRC_Msg*	SSRC_MsgClass;
 	UINT	SSRC_BeforeSr;
 	int		SSRC_BeforeFormat;
@@ -170,12 +179,15 @@ private:
 	bool	SSRC_Enable;
 	UINT	SSRC_Sr;
 	int		SSRC_Quality;
+#endif
 
 	inline bool	OpenDriver(void);
 	void	CloseDriver(const bool RemoveDriver = true);
 	inline void	Setup(void);
+#ifdef USE_SSRC_MODE
 	void	SSRC_Create(UINT& sr, int& format, UINT& bps, const UINT nch);
 	void	SSRC_SetCreate(void);
+#endif
 	void	SetFlush(void);
 	void	SetParam(void);
 	int		GetMaxLatency(const UINT sr);

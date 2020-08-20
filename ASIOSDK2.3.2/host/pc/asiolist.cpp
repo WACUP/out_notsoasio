@@ -205,7 +205,15 @@ LONG AsioDriverList::asioCloseDriver (int drvID)
 	if ((lpdrv = getDrvStruct(drvID,lpdrvlist)) != 0) {
 		if (lpdrv->asiodrv) {
 			iasio = (IASIO *)lpdrv->asiodrv;
-			iasio->Release();
+
+			__try
+			{
+				iasio->Release();
+			}
+			__except (EXCEPTION_EXECUTE_HANDLER)
+			{
+			}
+
 			lpdrv->asiodrv = 0;
 		}
 	}

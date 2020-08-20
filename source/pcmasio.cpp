@@ -28,11 +28,13 @@ extern bool	PlayEOF;
 
 CRITICAL_SECTION	CriticalSection = {0};
 
+#ifdef USE_SSRC_MODE
 Resampler_base*	SSRC_Class = NULL;
 
 HANDLE	hSSRC_Thread = NULL;
 HANDLE	EventReadySSRC_Thread = NULL;
 HANDLE	EventDestroySSRC_Thread = NULL;
+#endif
 
 bool	PostOutput = false;
 bool	ValidBufferSwitchTime = false;
@@ -53,19 +55,27 @@ _FormatInfo		FormatInfo = {0};
 _ChannelInfo*	ChannelInfo = NULL;
 ASIOBufferInfo*	BufferInfo = NULL;
 
-unsigned int __stdcall
+#ifdef USE_SSRC_MODE
+DWORD CALLBACK
 SSRC_ThreadProc(void* /*Param*/)
 {
 	SSRC_Class = NULL;
 
 	::SetEvent(EventReadySSRC_Thread);
 
-	while(::WaitForSingleObjectEx(EventDestroySSRC_Thread, INFINITE, true) != WAIT_OBJECT_0);
+	while(::WaitForSingleObjectEx(EventDestroySSRC_Thread, INFINITE, TRUE) != WAIT_OBJECT_0);
 
-	if(SSRC_Class) delete SSRC_Class;
+	if (SSRC_Class) {
+		delete SSRC_Class;
+		SSRC_Class = NULL;
+	}
 
-	_endthreadex(0);
-
+	//_endthreadex(0);
+	if (hSSRC_Thread != NULL)
+	{
+		CloseHandle(hSSRC_Thread);
+		hSSRC_Thread = NULL;
+	}
 	return 0;
 }
 
@@ -73,71 +83,73 @@ void CALLBACK
 SSRC_ApcProc(ULONG_PTR dwParam)
 {
 	SSRC_Msg* const	Param = reinterpret_cast<SSRC_Msg*>(dwParam);
+	if (Param)
+	{
+		switch (Param->Msg) {
+		case SSRC_CREATE:
+			if (SSRC_Class) {
+				delete SSRC_Class;
+					SSRC_Class = NULL;
+			}
 
-	switch(Param->Msg) {
-	case SSRC_CREATE:
-		if(SSRC_Class) {
-			delete SSRC_Class;
-			SSRC_Class = NULL;
+			int		nPriority;
+
+				switch (Param->Param1) {
+				case 1:
+					nPriority = THREAD_PRIORITY_ABOVE_NORMAL;
+					break;
+				case 2:
+					nPriority = THREAD_PRIORITY_HIGHEST;
+					break;
+				case 3:
+					nPriority = THREAD_PRIORITY_TIME_CRITICAL;
+					break;
+				default:
+					nPriority = THREAD_PRIORITY_NORMAL;
+					break;
+				}
+
+			::SetThreadPriority(::GetCurrentThread(), nPriority);
+
+			SSRC_Class = SSRC_create(
+				Param->Param2,
+				Param->Param3,
+				Param->Param4,
+				Param->Param5,
+				Param->Param6,
+				Param->Param7,
+				Param->Param8,
+				Param->Param9);
+			break;
+		case SSRC_DELETE:
+			if (SSRC_Class) {
+				delete SSRC_Class;
+				SSRC_Class = NULL;
+			}
+			break;
+		case SSRC_WRITE:
+			SSRC_Class->Write(Param->Buff, Param->Param1);
+			break;
+		case SSRC_FINISH:
+			SSRC_Class->Finish();
+			break;
+		case SSRC_GET_BUFFER:
+			Param->RetBuff = reinterpret_cast<unsigned char*>(SSRC_Class->GetBuffer(&Param->RetMsg));
+			Param->RetMsg = Min(Param->RetMsg, Param->Param1);
+			break;
+		case SSRC_READ:
+			SSRC_Class->Read(Param->Param1);
+			break;
+		case SSRC_FLUSH:
+			SSRC_Class->Flush();
+			break;
+		case SSRC_GET_DATA_IN_OUT_BUF:
+			Param->RetMsg = SSRC_Class->GetDataInOutbuf();
+			break;
 		}
 
-		int		nPriority;
-
-		switch(Param->Param1) {
-		case 1:
-			nPriority = THREAD_PRIORITY_ABOVE_NORMAL;
-			break;
-		case 2:
-			nPriority = THREAD_PRIORITY_HIGHEST;
-			break;
-		case 3:
-			nPriority = THREAD_PRIORITY_TIME_CRITICAL;
-			break;
-		default:
-			nPriority = THREAD_PRIORITY_NORMAL;
-			break;
-		}
-
-		::SetThreadPriority(::GetCurrentThread(), nPriority);
-
-		SSRC_Class = SSRC_create(
-							Param->Param2,
-							Param->Param3,
-							Param->Param4,
-							Param->Param5,
-							Param->Param6,
-							Param->Param7,
-							Param->Param8,
-							Param->Param9);
-		break;
-	case SSRC_DELETE:
-		if(SSRC_Class) {
-			delete SSRC_Class;
-			SSRC_Class = NULL;
-		}
-		break;
-	case SSRC_WRITE:
-		SSRC_Class->Write(Param->Buff, Param->Param1);
-		break;
-	case SSRC_FINISH:
-		SSRC_Class->Finish();
-		break;
-	case SSRC_GET_BUFFER:
-		Param->RetBuff = reinterpret_cast<unsigned char*>(SSRC_Class->GetBuffer(&Param->RetMsg));
-		Param->RetMsg = Min(Param->RetMsg, Param->Param1);
-		break;
-	case SSRC_READ:
-		SSRC_Class->Read(Param->Param1);
-		break;
-	case SSRC_FLUSH:
-		SSRC_Class->Flush();
-		break;
-	case SSRC_GET_DATA_IN_OUT_BUF:
-		Param->RetMsg = SSRC_Class->GetDataInOutbuf();
-		break;
+		Param->UnPause();
 	}
-
-	Param->UnPause();
 }
 
 SSRC_Msg::SSRC_Msg(
@@ -175,7 +187,10 @@ SSRC_Msg::~SSRC_Msg(void)
 void
 SSRC_Msg::UnPause(void)
 {
-	::SetEvent(EventWaitThread);
+	if (EventWaitThread != NULL)
+	{
+		::SetEvent(EventWaitThread);
+	}
 }
 
 void
@@ -237,18 +252,25 @@ SSRC_Msg::Call(void)
 {
 	if (EventWaitThread == NULL)
 	{
-	EventWaitThread = ::CreateEvent(NULL, false, false, NULL);
+		EventWaitThread = ::CreateEvent(NULL, false, false, NULL);
 	}
 
-	::QueueUserAPC(&SSRC_ApcProc, hSSRC_Thread, reinterpret_cast<ULONG_PTR>(this));
 	if (EventWaitThread != NULL)
 	{
-		::WaitForSingleObject(EventWaitThread, INFINITE);
+		::QueueUserAPC(&SSRC_ApcProc, hSSRC_Thread, reinterpret_cast<ULONG_PTR>(this));
+
+		// changing this to not wait forever
+		// is because driver issues & other
+		// things can cause calls to hang &
+		// that will eventually kill the ui
+		// thread & bring down the process.
+		::WaitForSingleObject(EventWaitThread, 250/*/INFINITE/**/);
 		::CloseHandle(EventWaitThread);
 		EventWaitThread = NULL;
 	}
 	return RetMsg;
 }
+#endif
 
 ASIOError
 _ASIOStop(void)
@@ -314,19 +336,19 @@ ResetAsioBuff(const int index, const int CopySamples)
 {
 	if ((BufferInfo != NULL) && (ChannelInfo != NULL))
 	{
-	const int	SetSamples = PreferredSize - CopySamples;
+		const int	SetSamples = PreferredSize - CopySamples;
 		if (SetSamples > 0)
 		{
-	for(UINT Idx = 0; Idx < FormatInfo.Nch; Idx++) {
-		const int	Bps_b = ChannelInfo[Idx].Bps_b;
+			for(UINT Idx = 0; Idx < FormatInfo.Nch; Idx++) {
+				const int	Bps_b = ChannelInfo[Idx].Bps_b;
 				if (BufferInfo[Idx].buffers)
 				{
-		memset(
-			reinterpret_cast<unsigned char*>(BufferInfo[Idx].buffers[index]) + CopySamples * Bps_b,
-			0,
-			SetSamples * Bps_b);
-	}
-}
+					memset(
+						reinterpret_cast<unsigned char*>(BufferInfo[Idx].buffers[index]) + CopySamples * Bps_b,
+						0,
+						SetSamples * Bps_b);
+				}
+			}
 		}
 	}
 }
@@ -336,15 +358,15 @@ ToAsioBuff(const int index, const int CopySamples)
 {
 	if ((BufferInfo != NULL) && (ChannelInfo != NULL))
 	{
-	for(UINT Idx = 0; Idx < FormatInfo.Nch; Idx++) {
-		const int	Bps_b = ChannelInfo[Idx].Bps_b;
+		for(UINT Idx = 0; Idx < FormatInfo.Nch; Idx++) {
+			const int	Bps_b = ChannelInfo[Idx].Bps_b;
 
-		memcpy(
-			BufferInfo[Idx].buffers[index],
-			ChannelInfo[Idx].Buff + BuffStart * Bps_b,
-			CopySamples * Bps_b);
+			memcpy(
+				BufferInfo[Idx].buffers[index],
+				ChannelInfo[Idx].Buff + BuffStart * Bps_b,
+				CopySamples * Bps_b);
+		}
 	}
-}
 }
 
 inline void
@@ -352,19 +374,19 @@ ToAsioBuffOverRun(const int index, const int MaxCopySamples)
 {
 	if ((BufferInfo != NULL) && (ChannelInfo != NULL))
 	{
-	const int	CopySamples1 = BuffPreferredSize - BuffStart;
-	const int	CopySamples2 = MaxCopySamples - BuffPreferredSize;
+		const int	CopySamples1 = BuffPreferredSize - BuffStart;
+		const int	CopySamples2 = MaxCopySamples - BuffPreferredSize;
 
-	for(UINT Idx = 0; Idx < FormatInfo.Nch; Idx++) {
-		const int	Bps_b = ChannelInfo[Idx].Bps_b;
-		const int	CopySize1 = CopySamples1 * Bps_b;
-		unsigned char*	Buff = ChannelInfo[Idx].Buff;
-		unsigned char*	AsioBuff = reinterpret_cast<unsigned char*>(BufferInfo[Idx].buffers[index]);
+		for(UINT Idx = 0; Idx < FormatInfo.Nch; Idx++) {
+			const int	Bps_b = ChannelInfo[Idx].Bps_b;
+			const int	CopySize1 = CopySamples1 * Bps_b;
+			unsigned char*	Buff = ChannelInfo[Idx].Buff;
+			unsigned char*	AsioBuff = reinterpret_cast<unsigned char*>(BufferInfo[Idx].buffers[index]);
 
-		memcpy(AsioBuff, Buff + BuffStart * Bps_b, CopySize1);
-		memcpy(AsioBuff + CopySize1, Buff, CopySamples2 * Bps_b);
+			memcpy(AsioBuff, Buff + BuffStart * Bps_b, CopySize1);
+			memcpy(AsioBuff + CopySize1, Buff, CopySamples2 * Bps_b);
+		}
 	}
-}
 }
 
 void
@@ -396,8 +418,8 @@ ASIOMessages(long selector, long value, void* message, double* opt)
 	case kAsioLatenciesChanged:
 		if (pPcmAsio != NULL)
 		{
-		pPcmAsio->SetReOpen();
-		RetCode = 1;
+			pPcmAsio->SetReOpen();
+			RetCode = 1;
 		}
 		else
 		{
@@ -430,20 +452,32 @@ PcmAsio::PcmAsio(void)
 {
 	Timer::Init();
 
-	EventDestroySSRC_Thread = ::CreateEvent(NULL, false, false, NULL);
-	EventReadySSRC_Thread = ::CreateEvent(NULL, false, false, NULL);
-
-	unsigned int	dwSSRC_Thread = 0;
-
-	hSSRC_Thread =
-		reinterpret_cast<HANDLE>(_beginthreadex(NULL, 0, SSRC_ThreadProc, NULL, 0, &dwSSRC_Thread));
-
-	if (EventReadySSRC_Thread != NULL)
+#ifdef USE_SSRC_MODE
+	if (EventDestroySSRC_Thread == NULL)
 	{
-		::WaitForSingleObject(EventReadySSRC_Thread, INFINITE);
-		::CloseHandle(EventReadySSRC_Thread);
-		EventReadySSRC_Thread = NULL;
+		EventDestroySSRC_Thread = ::CreateEvent(NULL, false, false, NULL);
 	}
+
+	if (EventReadySSRC_Thread == NULL)
+	{
+		EventReadySSRC_Thread = ::CreateEvent(NULL, false, false, NULL);
+	}
+
+	/*unsigned int	dwSSRC_Thread = 0;
+	hSSRC_Thread =
+		reinterpret_cast<HANDLE>(_beginthreadex(NULL, 0, SSRC_ThreadProc, NULL, 0, &dwSSRC_Thread));*/
+	hSSRC_Thread = CreateThread(NULL, 0, SSRC_ThreadProc, NULL, 0, NULL);
+
+	if (hSSRC_Thread != NULL)
+	{
+		if (EventReadySSRC_Thread != NULL)
+		{
+			::WaitForSingleObject(EventReadySSRC_Thread, INFINITE);
+			::CloseHandle(EventReadySSRC_Thread);
+			EventReadySSRC_Thread = NULL;
+		}
+	}
+#endif
 
 	Callbacks.bufferSwitch = &BufferSwitch;
 	Callbacks.sampleRateDidChange = &SampleRateChanged;
@@ -460,28 +494,32 @@ PcmAsio::~PcmAsio(void)
 {
 	CloseDriver();
 
+#ifdef USE_SSRC_MODE
 	if (EventDestroySSRC_Thread != NULL)
 	{
-	::SetEvent(EventDestroySSRC_Thread);
+		::SetEvent(EventDestroySSRC_Thread);
 	}
 
 	if (hSSRC_Thread != NULL)
 	{
-		if(::WaitForSingleObject(hSSRC_Thread, INFINITE) != WAIT_OBJECT_0) {
-		if(::TerminateThread(hSSRC_Thread, 0)) {
-				::WaitForSingleObject(hSSRC_Thread, INFINITE);
+		if (::WaitForSingleObject(hSSRC_Thread, 1000/*INFINITE*/) != WAIT_OBJECT_0)
+		{
+			if (::TerminateThread(hSSRC_Thread, 0))
+			{
+				::WaitForSingleObject(hSSRC_Thread, 1000/*INFINITE*/);
+			}
 		}
-	}
 
-	::CloseHandle(hSSRC_Thread);
+		::CloseHandle(hSSRC_Thread);
 		hSSRC_Thread = NULL;
 	}
 
 	if (EventDestroySSRC_Thread != NULL)
 	{
-	::CloseHandle(EventDestroySSRC_Thread);
+		::CloseHandle(EventDestroySSRC_Thread);
 		EventDestroySSRC_Thread = NULL;
 	}
+#endif
 }
 
 inline bool
@@ -489,25 +527,25 @@ PcmAsio::OpenDriver(void)
 {
 	if (asioDrivers != NULL)
 	{
-	const int	MaxDriver = asioDrivers->asioGetNumDev();
-	if(MaxDriver && (ParamGlobal.Device < MaxDriver)) {
-		const int	DriverNameLen = 64;
+		const int	MaxDriver = asioDrivers->asioGetNumDev();
+		if(MaxDriver && (ParamGlobal.Device < MaxDriver)) {
+			const int	DriverNameLen = 64;
 			char	DriverName[DriverNameLen] = {0};
 
-		if(asioDrivers->asioGetDriverName(ParamGlobal.Device, DriverName, DriverNameLen) == 0) {
-			if(asioDrivers->loadDriver(DriverName)) {
+			if(asioDrivers->asioGetDriverName(ParamGlobal.Device, DriverName, DriverNameLen) == 0) {
+				if(asioDrivers->loadDriver(DriverName)) {
 					ASIODriverInfo	DriverInfo = {0};
-				DriverInfo.asioVersion = 2;
+					DriverInfo.asioVersion = 2;
 					DriverInfo.sysRef = plugin.hMainWindow;
 
 					if (ASIOInit(&DriverInfo) == ASE_OK) {
 						Setup();
 					}
 
-				LoadDriver = true;
+					LoadDriver = true;
+				}
 			}
 		}
-	}
 	}
 	return InitDriver;
 }
@@ -515,7 +553,7 @@ PcmAsio::OpenDriver(void)
 void
 PcmAsio::CloseDriver(const bool RemoveDriver)
 {
-	if(InitDriver) {
+	if (InitDriver) {
 		InitOpen = false;
 
 		Stop();
@@ -527,27 +565,29 @@ PcmAsio::CloseDriver(const bool RemoveDriver)
 			ASIOExit();
 		}
 
+#ifdef USE_SSRC_MODE
 		if (SSRC_MsgClass)
 		{
 			delete SSRC_MsgClass;
 			SSRC_MsgClass = NULL;
 		}
+#endif
 
 		if (CutBuff != NULL)
 		{
-		delete[] CutBuff;
+			delete[] CutBuff;
 			CutBuff = NULL;
 		}
 
 		if (ChannelInfo != NULL)
 		{
-		delete[] ChannelInfo;
+			delete[] ChannelInfo;
 			ChannelInfo = NULL;
 		}
 
 		if (BufferInfo != NULL)
 		{
-		delete[] BufferInfo;
+			delete[] BufferInfo;
 			BufferInfo = NULL;
 		}
 
@@ -558,7 +598,7 @@ PcmAsio::CloseDriver(const bool RemoveDriver)
 	{
 		if (asioDrivers != NULL)
 		{
-		asioDrivers->removeCurrentDriver();
+			asioDrivers->removeCurrentDriver();
 		}
 		LoadDriver = false;
 	}
@@ -623,11 +663,13 @@ PcmAsio::Setup(void)
 	BufferInfo = new ASIOBufferInfo[DeviceNch];
 	InitBuff = false;
 
+#ifdef USE_SSRC_MODE
 	SSRC_MsgClass = NULL;
 	SSRC_SetCreate();
 	SSRC_Enable = ParamGlobal.Resampling_Enable;
 	SSRC_Sr = ParamGlobal.Resampling_SampleRate;
 	SSRC_Quality = ParamGlobal.Resampling_Quality;
+#endif
 
 	int		nPriority;
 
@@ -651,6 +693,7 @@ PcmAsio::Setup(void)
 	InitDriver = true;
 }
 
+#ifdef USE_SSRC_MODE
 void
 PcmAsio::SSRC_Create(UINT& sr, int& format, UINT& bps, const UINT nch)
 {
@@ -660,11 +703,12 @@ PcmAsio::SSRC_Create(UINT& sr, int& format, UINT& bps, const UINT nch)
 			(SSRC_BeforeNch != nch)) {
 		FlushWrite();
 
-		if(SSRC_MsgClass) delete SSRC_MsgClass;
-
-		if(sr == SSRC_Sr) {
+		if(SSRC_MsgClass) {
+			delete SSRC_MsgClass;
 			SSRC_MsgClass = NULL;
-		} else {
+		}
+
+		if(sr != SSRC_Sr) {
 			SSRC_MsgClass = new SSRC_Msg(
 									ParamGlobal.Resampling_ThreadPriority,
 									sr, SSRC_Sr,
@@ -695,6 +739,7 @@ PcmAsio::SSRC_SetCreate(void)
 	SSRC_BeforeBps = 0;
 	SSRC_BeforeNch = 0;
 }
+#endif
 
 void
 PcmAsio::SetReOpen(void)
@@ -728,7 +773,9 @@ PcmAsio::MsgOpen(UINT sr, int _bps, UINT nch)
 	FormatInfo.org_Nch = nch;
 	FormatInfo.org_Bps_b_Nch = (bps >> 3) * nch;
 
+#ifdef USE_SSRC_MODE
 	if(SSRC_Enable) SSRC_Create(sr, format, bps, nch);
+#endif
 
 	const bool	ChangeSr = sr != FormatInfo.Sr;
 	const bool	ChangeFormat = format != FormatInfo.Format;
@@ -748,10 +795,14 @@ PcmAsio::MsgOpen(UINT sr, int _bps, UINT nch)
 			(_EnableConvert1chTo2ch == EnableConvert1chTo2ch)) {
 		::EnterCriticalSection(&CriticalSection);
 
+#ifdef USE_SSRC_MODE
 		GapWriteSamples = SSRC_MsgClass ?
 								static_cast<int>(TotalWriteSize / old_org_Bps_b_Nch * sr / old_org_Sr -
 									TotalOutputSamples) :
 								WriteSamples;
+#else
+		GapWriteSamples = WriteSamples;
+#endif
 		SetParam();
 
 		::LeaveCriticalSection(&CriticalSection);
@@ -843,18 +894,18 @@ PcmAsio::MsgOpen(UINT sr, int _bps, UINT nch)
 
 			if (ChannelInfo != NULL)
 			{
-			ChannelInfo[Idx].Type = OneChannelInfo.type;
-			ChannelInfo[Idx].Bps_b = Channel_Bps_b;
-			ChannelInfo[Idx].Buff = new unsigned char[BuffPreferredSize * Channel_Bps_b];
+				ChannelInfo[Idx].Type = OneChannelInfo.type;
+				ChannelInfo[Idx].Bps_b = Channel_Bps_b;
+				ChannelInfo[Idx].Buff = new unsigned char[BuffPreferredSize * Channel_Bps_b];
 			}
 
 			if (BufferInfo != NULL)
 			{
-			BufferInfo[Idx].isInput = ASIOFalse;
-			BufferInfo[Idx].channelNum = ChannelNum;
-			BufferInfo[Idx].buffers[0] = NULL;
-			BufferInfo[Idx].buffers[1] = NULL;
-		}
+				BufferInfo[Idx].isInput = ASIOFalse;
+				BufferInfo[Idx].channelNum = ChannelNum;
+				BufferInfo[Idx].buffers[0] = NULL;
+				BufferInfo[Idx].buffers[1] = NULL;
+			}
 		}
 
 		ASIOCreateBuffers(BufferInfo, nch, PreferredSize, &Callbacks);
@@ -919,7 +970,11 @@ int
 PcmAsio::GetMaxLatency(const UINT sr)
 {
 	return ::MulDiv(BuffPreferredSize + DeviceLatency, 1000, sr) +
+#ifdef USE_SSRC_MODE
 				(SSRC_Enable ? SSRC_MAX_LATENCY : 0);
+#else
+				0;
+#endif
 }
 
 void
@@ -932,13 +987,13 @@ PcmAsio::Close(void)
 
 	if (ChannelInfo != NULL)
 	{
-	for(UINT Idx = 0; Idx < DeviceNch; Idx++) {
-		if(ChannelInfo[Idx].Buff) {
-			delete[] ChannelInfo[Idx].Buff;
-			ChannelInfo[Idx].Buff = NULL;
+		for (UINT Idx = 0; Idx < DeviceNch; Idx++) {
+			if (ChannelInfo[Idx].Buff) {
+				delete[] ChannelInfo[Idx].Buff;
+				ChannelInfo[Idx].Buff = NULL;
+			}
 		}
 	}
-}
 }
 
 void
@@ -956,8 +1011,6 @@ PcmAsio::MsgClose(void)
 int
 PcmAsio::MsgCanWrite(void)
 {
-	int		RetCode;
-
 	if(InitOpen) {
 		if(ReOpen) {
 			CloseDriver();
@@ -970,34 +1023,33 @@ PcmAsio::MsgCanWrite(void)
 				TotalWriteSize = _TotalWriteSize;
 			} else {
 				ReOpen = false;
-				::PostMessage(plugin.hMainWindow, WM_COMMAND, 40047, 0);
+				//::PostMessage(plugin.hMainWindow, WM_COMMAND, 40047, 0);
 				return 0;
 			}
 		}
 
-		RetCode = NowPause ? 0 : GetCanWriteSize();
-	} else {
-		RetCode = 0;
-	}
-
-	return RetCode;
-
-//	return InitOpen ? (NowPause ? 0 : GetCanWriteSize()) : 0;
+		//return (NowPause ? 0 : GetCanWriteSize());
+	}/* else {
+		return 0;
+	}*/
+	return (InitOpen ? (NowPause ? 0 : GetCanWriteSize()) : 0);
 }
 
 int
 PcmAsio::GetCanWriteSize(void)
 {
 	int		CanWriteSize = BuffPreferredSize - WriteSamples;
-
+#ifdef USE_SSRC_MODE
 	if(SSRC_MsgClass) {
 		CanWriteSize = ::MulDiv(CanWriteSize, FormatInfo.org_Sr, FormatInfo.Sr) *
 							FormatInfo.org_Bps_b_Nch;
 	} else {
+#endif
 		CanWriteSize *= FormatInfo.org_Bps_b_Nch;
 		CanWriteSize = (CanWriteSize > CutBuffSize) ? CanWriteSize - CutBuffSize : 0;
+#ifdef USE_SSRC_MODE
 	}
-
+#endif
 	return CanWriteSize;
 }
 
@@ -1008,7 +1060,9 @@ PcmAsio::MsgWrite(const int size, unsigned char* data)
 
 	if(InitOpen) {
 		if(size && data) {
+#ifdef USE_SSRC_MODE
 			if(SSRC_MsgClass) SSRC_MsgClass->Write(data, size);
+#endif
 			Write(false, size, data);
 			TotalWriteSize += size;
 		}
@@ -1025,22 +1079,26 @@ void
 PcmAsio::FlushWrite(void)
 {
 	if(InitOpen) {
-		if(SSRC_MsgClass) {
-			if(SSRC_BeforeSr) {
-				SSRC_SetCreate();
+#ifdef USE_SSRC_MODE
+		if(SSRC_MsgClass && SSRC_BeforeSr) {
+			SSRC_SetCreate();
+			if (SSRC_MsgClass) {
 				SSRC_MsgClass->Finish();
+			}
 
-				while(EndThread == false) {
-					Write(true, 0, NULL);
+			while(EndThread == false) {
+				Write(true, 0, NULL);
 
-					if(SSRC_MsgClass->GetDataInOutbuf() == 0) break;
+				if(!SSRC_MsgClass || SSRC_MsgClass->GetDataInOutbuf() == 0) break;
 
-					Sleep(1);
-				}
+				Sleep(1);
 			}
 		} else {
+#endif
 			Write(true, 0, NULL);
+#ifdef USE_SSRC_MODE
 		}
+#endif
 	}
 }
 
@@ -1051,12 +1109,14 @@ PcmAsio::Write(const bool flush, int size, unsigned char* data)
 	int		CutSamples;
 	unsigned char*	AddData = NULL;
 
+#ifdef USE_SSRC_MODE
 	if(SSRC_MsgClass) {
 		data = reinterpret_cast<unsigned char*>(SSRC_MsgClass->GetBuffer(
 										reinterpret_cast<UINT*>(&size),
 										(BuffPreferredSize - WriteSamples) * FormatInfo.Bps_b_Nch));
 		CutSamples = size / FormatInfo.Bps_b_Nch;
 	} else {
+#endif
 		if(CutBuffSize > 0) {
 			if(size) {
 				const int	NewSize = CutBuffSize + size;
@@ -1085,7 +1145,9 @@ PcmAsio::Write(const bool flush, int size, unsigned char* data)
 		if((CutBuffSize = size - CutSize) != 0) {
 			memcpy(CutBuff, data + CutSize, CutBuffSize);
 		}
+#ifdef USE_SSRC_MODE
 	}
+#endif
 
 	unsigned char*	ReadPnt = data;
 
@@ -1115,11 +1177,15 @@ PcmAsio::Write(const bool flush, int size, unsigned char* data)
 		Sleep(1);
 	}
 
+#ifdef USE_SSRC_MODE
 	if(SSRC_MsgClass) {
 		SSRC_MsgClass->Read(size);
 	} else {
+#endif
 		if(AddData) delete[] AddData;
+#ifdef USE_SSRC_MODE
 	}
+#endif
 }
 
 int
@@ -1192,6 +1258,7 @@ PcmAsio::MsgFlush(const int t)
 		TotalOutputSamples = static_cast<__int64>(t) * FormatInfo.Sr / 1000;
 		TotalWriteSize = static_cast<__int64>(t) * FormatInfo.org_Sr / 1000 * FormatInfo.org_Bps_b_Nch;
 
+#ifdef USE_SSRC_MODE
 		if(SSRC_MsgClass) {
 			UINT	sr = SSRC_BeforeSr;
 			int		format = SSRC_BeforeFormat;
@@ -1199,9 +1266,12 @@ PcmAsio::MsgFlush(const int t)
 			UINT	nch = SSRC_BeforeNch;
 
 			SSRC_SetCreate();
-			SSRC_MsgClass->Flush();
+			if (SSRC_MsgClass) {
+				SSRC_MsgClass->Flush();
+			}
 			SSRC_Create(sr, format, bps, nch);
 		}
+#endif
 	}
 }
 
@@ -1243,10 +1313,10 @@ inline unsigned char*
 PcmAsio::ToBuff(unsigned char* ReadPnt)
 {
 	if (ReadPnt && (ChannelInfo != NULL)) {
-	for(UINT Idx = 0; Idx < FormatInfo.Nch; Idx++) {
-		ChannelInfo[Idx].ToBuffFunc(Idx, ReadPnt);
-		if((EnableConvert1chTo2ch == false) || (Idx == 1)) ReadPnt += FormatInfo.Bps_b;
-	}
+		for(UINT Idx = 0; Idx < FormatInfo.Nch; Idx++) {
+			ChannelInfo[Idx].ToBuffFunc(Idx, ReadPnt);
+			if((EnableConvert1chTo2ch == false) || (Idx == 1)) ReadPnt += FormatInfo.Bps_b;
+		}
 	}
 	return ReadPnt;
 }

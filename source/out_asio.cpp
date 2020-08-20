@@ -72,10 +72,10 @@ bool	PlayEOF = false;
 int volume = 255;
 
 extern "C" __declspec(dllexport) Out_Module* __cdecl
-	winampGetOutModule(void)
-	{
+winampGetOutModule(void)
+{
 	return &plugin;
-	}
+}
 
 extern "C" __declspec(dllexport) void __cdecl
 winampGetOutModeChange(int mode)
@@ -159,6 +159,7 @@ winampGetOutPrefs(prefsDlgRecW* prefs)
 		prefs->name = _wcsdup(/*WASABI_API_LNGSTRINGW(IDS_ASIO)*/L"ASIO");
 		prefs->proc = CfgProc;
 		prefs->where = 9;
+		prefs->_id = 51;
 		output_prefs = prefs;
 		return TRUE;
 	}
@@ -183,31 +184,34 @@ ThreadProc(void* /*Param*/)
 
 	if (asioDrivers == NULL)
 	{
-	asioDrivers = new AsioDrivers;
+		asioDrivers = new AsioDrivers;
 	}
 
 	if (asioDrivers != NULL)
 	{
 		if (pPcmAsio == NULL)
 		{
-	pPcmAsio = new PcmAsio;
+			pPcmAsio = new PcmAsio;
 		}
 
 		if (pPcmAsio != NULL)
 		{
-	::SetEvent(EventReadyThread);
+			::SetEvent(EventReadyThread);
 
-			while(WaitForSingleObjectEx(EventDestroyThread, INFINITE, TRUE) != WAIT_OBJECT_0);
+			while(::WaitForSingleObjectEx(EventDestroyThread, 1000/*/INFINITE/**/, TRUE) != WAIT_OBJECT_0);
 
-	delete pPcmAsio;
-			pPcmAsio = NULL;
+			if (pPcmAsio != NULL)
+			{
+				delete pPcmAsio;
+				pPcmAsio = NULL;
+			}
 		}
 		else
 		{
 			::SetEvent(EventReadyThread);
 		}
 
-	delete asioDrivers;
+		delete asioDrivers;
 		asioDrivers = NULL;
 	}
 	else
@@ -228,80 +232,80 @@ void CALLBACK
 ApcProc(ULONG_PTR dwParam)
 {
 	ParamMsg* const	Param = reinterpret_cast<ParamMsg*>(dwParam);
-	if ((Param != NULL) && (pPcmAsio != NULL)) {
-	switch(Param->Msg) {
-	case MSG_OPEN:
-			{
-				Param->RetMsg = pPcmAsio->MsgOpen(Param->Param1, Param->Param2, Param->Param3);
-				// this seems to help with live device switching
-				// but some drivers (realtek) are just a mess :(
-				if (Param->RetMsg == -1) {
-					pPcmAsio->MsgClose();
+	if (Param != NULL)
+	{
+		if (pPcmAsio != NULL) {
+			switch (Param->Msg) {
+				case MSG_OPEN:
+				{
+					Param->RetMsg = pPcmAsio->MsgOpen(Param->Param1, Param->Param2, Param->Param3);
+					// this seems to help with live device switching
+					// but some drivers (realtek) are just a mess :(
+					if (Param->RetMsg == -1) {
+						pPcmAsio->MsgClose();
 
-		Param->RetMsg = pPcmAsio->MsgOpen(Param->Param1, Param->Param2, Param->Param3);
-					if (Param->RetMsg != -1) {
-						// calling this does something that helps
-						// to get realtek asio devices working :)
-						pPcmAsio->SetReOpen();
+						Param->RetMsg = pPcmAsio->MsgOpen(Param->Param1, Param->Param2, Param->Param3);
+						if (Param->RetMsg == -1) {
+							break;
+						}
 					}
-				}
-				else {
+
 					// calling this does something that helps
 					// to get realtek asio devices working :)
 					pPcmAsio->SetReOpen();
+					break;
 				}
-		break;
-			}
-	case MSG_CLOSE:
-			{
-		pPcmAsio->MsgClose();
+				case MSG_CLOSE:
+				{
+					pPcmAsio->MsgClose();
 
-			// this makes sure ThreadProc
-			// will exit out of it's wait
-				if (EventDestroyThread != NULL) {
-				::SetEvent(EventDestroyThread);
+					// this makes sure ThreadProc
+					// will exit out of it's wait
+					if (EventDestroyThread != NULL) {
+						::SetEvent(EventDestroyThread);
+					}
+					break;
+				}
+				case MSG_WRITE:
+				{
+					Param->RetMsg = ((pPcmAsio != NULL) ? pPcmAsio->MsgWrite(Param->Param1, Param->Buff) : 0);
+					break;
+				}
+				case MSG_CAN_WRITE:
+				{
+					Param->RetMsg = ((pPcmAsio != NULL) ? pPcmAsio->MsgCanWrite() : 0);
+					break;
+				}
+				case MSG_IS_PLAYING:
+				{
+					Param->RetMsg = ((pPcmAsio != NULL) ? pPcmAsio->MsgIsPlaying() : 0);
+					break;
+				}
+				case MSG_PAUSE:
+				{
+					Param->RetMsg = ((pPcmAsio != NULL) ? pPcmAsio->MsgPause(Param->Param1) : 0);
+					break;
+				}
+				case MSG_FLUSH:
+				{
+					pPcmAsio->MsgFlush(Param->Param1);
+					break;
+				}
+		//		case MSG_GET_OUTPUTTIME:
+		//		{
+		//			Param->RetMsg = pPcmAsio->MsgGetOutputTime();
+		//			break;
+		//		}
+		//		case MSG_GET_WRITTENTIME:
+		//		{
+		//			Param->RetMsg = pPcmAsio->MsgGetWrittenTime();
+		//			break;
+		//		}
 			}
-		break;
-			}
-	case MSG_WRITE:
-			{
-		Param->RetMsg = pPcmAsio->MsgWrite(Param->Param1, Param->Buff);
-		break;
-			}
-	case MSG_CAN_WRITE:
-			{
-		Param->RetMsg = pPcmAsio->MsgCanWrite();
-		break;
-			}
-	case MSG_IS_PLAYING:
-			{
-		Param->RetMsg = pPcmAsio->MsgIsPlaying();
-		break;
-			}
-	case MSG_PAUSE:
-			{
-		Param->RetMsg = pPcmAsio->MsgPause(Param->Param1);
-		break;
-			}
-	case MSG_FLUSH:
-			{
-		pPcmAsio->MsgFlush(Param->Param1);
-		break;
-			}
-//	case MSG_GET_OUTPUTTIME:
-	//		{
-//		Param->RetMsg = pPcmAsio->MsgGetOutputTime();
-//		break;
-	//		}
-//	case MSG_GET_WRITTENTIME:
-	//		{
-//		Param->RetMsg = pPcmAsio->MsgGetWrittenTime();
-//		break;
-	//		}
-	}
-	}
+		}
 
-	Param->UnPause();
+		Param->UnPause();
+	}
 }
 
 ParamMsg::ParamMsg(const int _Msg)
@@ -344,33 +348,50 @@ ParamMsg::ParamMsg(const int _Msg, const int _Param1, unsigned char* _Buff)
 int
 ParamMsg::Call(void)
 {
-	if (EventWaitThread == NULL)
+	__try
 	{
-	EventWaitThread = ::CreateEvent(NULL, false, false, NULL);
-	}
+		if (hThread != NULL)
+		{
+			if (EventWaitThread == NULL)
+			{
+				EventWaitThread = ::CreateEvent(NULL, false, false, NULL);
+			}
 
-	if (EventWaitThread != NULL)
+			if (EventWaitThread != NULL)
+			{
+				::QueueUserAPC(&ApcProc, hThread, reinterpret_cast<ULONG_PTR>(this));
+
+				// changing this to not wait forever
+				// is because driver issues & other
+				// things can cause calls to hang &
+				// that will eventually kill the ui
+				// thread & bring down the process.
+				//::WaitForSingleObjectEx(EventWaitThread, 250/*/INFINITE/**/, TRUE);
+				while (::WaitForSingleObjectEx(EventWaitThread, 250/*/INFINITE/**/, TRUE) != WAIT_OBJECT_0);
+				::CloseHandle(EventWaitThread);
+				EventWaitThread = NULL;
+			}
+
+			return RetMsg;
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
-		::QueueUserAPC(&ApcProc, hThread, reinterpret_cast<ULONG_PTR>(this));
-
-		// changing this to not wait forever
-		// is because driver issues & other
-		// things can cause calls to hang &
-		// that will eventually kill the ui
-		// thread & bring down the process.
-		::WaitForSingleObject(EventWaitThread, 250/*/INFINITE/**/);
-		::CloseHandle(EventWaitThread);
-		EventWaitThread = NULL;
+		if (EventWaitThread != NULL)
+		{
+			::CloseHandle(EventWaitThread);
+			EventWaitThread = NULL;
+		}
 	}
-	return RetMsg;
+	return 0;
 }
 
 void
 ParamMsg::UnPause(void)
 {
 	if (EventWaitThread != NULL) {
-	::SetEvent(EventWaitThread);
-}
+		::SetEvent(EventWaitThread);
+	}
 }
 
 void
@@ -394,6 +415,7 @@ ReadProfile(void)
 		GetNativeIniInt(PLUGIN_INI, INI_NAME, L"DirectInputMonitor", 0) != 0;
 	ParamGlobal.Volume_Control =
 		GetNativeIniInt(PLUGIN_INI, INI_NAME, L"Volume_Control", 0) != 0;
+#ifdef USE_SSRC_MODE
 	ParamGlobal.Resampling_Enable =
 		GetNativeIniInt(PLUGIN_INI, INI_NAME, L"Resampling_Enable", 0) != 0;
 	ParamGlobal.Resampling_ThreadPriority =
@@ -402,6 +424,7 @@ ReadProfile(void)
 		GetNativeIniInt(PLUGIN_INI, INI_NAME, L"Resampling_SampleRate", 88200);
 	ParamGlobal.Resampling_Quality =
 		GetNativeIniInt(PLUGIN_INI, INI_NAME, L"Resampling_Quality", 3);
+#endif
 }
 
 void
@@ -435,6 +458,7 @@ WriteProfile(void)
 	_itow_s(ParamGlobal.Volume_Control, str, ARRAYSIZE(str), 10);
 	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"Volume_Control", str);
 
+#ifdef USE_SSRC_MODE
 	_itow_s(ParamGlobal.Resampling_Enable, str, ARRAYSIZE(str), 10);
 	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"Resampling_Enable", str);
 
@@ -446,6 +470,7 @@ WriteProfile(void)
 
 	_itow_s(ParamGlobal.Resampling_Quality, str, ARRAYSIZE(str), 10);
 	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"Resampling_Quality", str);
+#endif
 }
 
 void __cdecl
@@ -454,7 +479,7 @@ Config(HWND hwndParent)
 	if (output_prefs != NULL)
 	{
 		PostMessage(plugin.hMainWindow, WM_WA_IPC, (WPARAM)output_prefs, IPC_OPENPREFSTOPAGE);
-}
+	}
 }
 
 void __cdecl
@@ -501,24 +526,24 @@ Quit(void)
 	{
 		if (EventDestroyThread != NULL)
 		{
-	::SetEvent(EventDestroyThread);
+			::SetEvent(EventDestroyThread);
 		}
 
-		if (::WaitForSingleObject(hThread, 1000/*INFINITE*/) != WAIT_OBJECT_0)
+		if (::WaitForSingleObjectEx(hThread, 1000/*INFINITE*/, TRUE) != WAIT_OBJECT_0)
 		{
 			if (::TerminateThread(hThread, 0))
 			{
-				::WaitForSingleObject(hThread, 1000/*INFINITE*/);
+				::WaitForSingleObjectEx(hThread, 1000/*INFINITE*/, TRUE);
+			}
 		}
-	}
 
-	::CloseHandle(hThread);
+		::CloseHandle(hThread);
 		hThread = NULL;
 	}
 
 	if (EventDestroyThread != NULL)
 	{
-	::CloseHandle(EventDestroyThread);
+		::CloseHandle(EventDestroyThread);
 		EventDestroyThread = NULL;
 	}
 
@@ -550,16 +575,18 @@ Open(int samplerate, int numchannels, int bitspersamp, int bufferlenms, int preb
 
 	if (hThread != NULL)
 	{
-	if (EventReadyThread != NULL)
-	{
-		::WaitForSingleObject(EventReadyThread, INFINITE);
-		::CloseHandle(EventReadyThread);
-		EventReadyThread = NULL;
-	}
+		if (EventReadyThread != NULL)
+		{
+			//::WaitForSingleObjectEx(EventReadyThread, 1000/*/INFINITE/**/, TRUE);
+			while (::WaitForSingleObjectEx(EventReadyThread, 1000/*/INFINITE/**/, TRUE) != WAIT_OBJECT_0);
+
+			::CloseHandle(EventReadyThread);
+			EventReadyThread = NULL;
+		}
 
 		const int ret = ParamMsg(MSG_OPEN, samplerate, bitspersamp, numchannels).Call();
-	if (ret >= 0)
-	{
+		if (ret >= 0)
+		{
 			Subclass(plugin.hMainWindow, HookProc);
 			return 0;
 		}
@@ -601,46 +628,46 @@ void __cdecl
 SetVolume(int v)
 {
 	if ((v != -666) && ParamGlobal.Volume_Control)
-		{
+	{
 		volume = v;
-		}
+	}
 
-		double newVolume = (volume / 255.0f);
+	double newVolume = (volume / 255.0f);
 
-  CoInitialize(NULL);
-  IMMDeviceEnumerator *deviceEnumerator = NULL;
-		HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_INPROC_SERVER, 
-									  __uuidof(IMMDeviceEnumerator), (LPVOID *)&deviceEnumerator);
-  IMMDevice *defaultDevice = NULL;
+	CoInitialize(NULL);
+	IMMDeviceEnumerator *deviceEnumerator = NULL;
+	HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_INPROC_SERVER, 
+								  __uuidof(IMMDeviceEnumerator), (LPVOID *)&deviceEnumerator);
+	IMMDevice *defaultDevice = NULL;
 
-  hr = deviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &defaultDevice);
-  deviceEnumerator->Release();
-  deviceEnumerator = NULL;
+	hr = deviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &defaultDevice);
+	deviceEnumerator->Release();
+	deviceEnumerator = NULL;
 
-  IAudioEndpointVolume *endpointVolume = NULL;
-		hr = defaultDevice->Activate(__uuidof(IAudioEndpointVolume), 
-									 CLSCTX_INPROC_SERVER, NULL,
-									 (LPVOID *)&endpointVolume);
-  defaultDevice->Release();
-  defaultDevice = NULL; 
+	IAudioEndpointVolume *endpointVolume = NULL;
+	hr = defaultDevice->Activate(__uuidof(IAudioEndpointVolume), 
+								 CLSCTX_INPROC_SERVER, NULL,
+								 (LPVOID *)&endpointVolume);
+	defaultDevice->Release();
+	defaultDevice = NULL;
 
-  // -------------------------
-  float currentVolume = 0;
-  endpointVolume->GetMasterVolumeLevel(&currentVolume);
+	// -------------------------
+	float currentVolume = 0;
+	endpointVolume->GetMasterVolumeLevel(&currentVolume);
 
-  hr = endpointVolume->GetMasterVolumeLevelScalar(&currentVolume);
+	hr = endpointVolume->GetMasterVolumeLevelScalar(&currentVolume);
 
-		/*if (bScalar == false)
-  {
-    hr = endpointVolume->SetMasterVolumeLevel((float)newVolume, NULL);
-  }
-		else if (bScalar == true)*/
-  {
-    hr = endpointVolume->SetMasterVolumeLevelScalar((float)newVolume, NULL);
-  }
-  endpointVolume->Release();
+	/*if (bScalar == false)
+	{
+		hr = endpointVolume->SetMasterVolumeLevel((float)newVolume, NULL);
+	}
+	else if (bScalar == true)*/
+	{
+		hr = endpointVolume->SetMasterVolumeLevelScalar((float)newVolume, NULL);
+	}
+	endpointVolume->Release();
 
-  CoUninitialize();
+	CoUninitialize();
 }
 
 void __cdecl

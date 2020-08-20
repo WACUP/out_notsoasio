@@ -82,6 +82,7 @@ DialogOption::~DialogOption(void)
 		New = true;
 	}
 
+#ifdef USE_SSRC_MODE
 	bParam = Resampling_Enable->GetCheck() == BF_CHECKED;
 	if (ParamGlobal.Resampling_Enable != bParam) {
 		ParamGlobal.Resampling_Enable = bParam;
@@ -105,6 +106,7 @@ DialogOption::~DialogOption(void)
 		ParamGlobal.Resampling_Quality = iParam;
 		New = true;
 	}
+#endif
 
 	if (New) {
 		// only save if needed
@@ -171,15 +173,15 @@ DialogOption::WmInitDialog(Org_Mes* OrgMes, HWND hwnd, LONG lInitParam)
 
 	if (asioDrivers != NULL)
 	{
-	const int	MaxDriver = asioDrivers->asioGetNumDev();
+		const int	MaxDriver = asioDrivers->asioGetNumDev();
 
-	for(int Idx = 0; Idx < MaxDriver; Idx++) {
-		const int	DriverNameLen = 64;
-		char	DriverName[DriverNameLen];
+		for(int Idx = 0; Idx < MaxDriver; Idx++) {
+			const int	DriverNameLen = 64;
+			char	DriverName[DriverNameLen];
 
-		asioDrivers->asioGetDriverName(Idx, DriverName, DriverNameLen);
-		Device->AddString(DriverName);
-	}
+			asioDrivers->asioGetDriverName(Idx, DriverName, DriverNameLen);
+			Device->AddString(DriverName);
+		}
 	}
 
 	if (ParamGlobal.Device < 0 || ParamGlobal.Device > Device->GetCount())
@@ -218,6 +220,7 @@ DialogOption::WmInitDialog(Org_Mes* OrgMes, HWND hwnd, LONG lInitParam)
 		Volume_Control->Check();
 	}
 
+#ifdef USE_SSRC_MODE
 	if(ParamGlobal.Resampling_Enable) {
 		Resampling_Enable->Check();
 	}
@@ -244,6 +247,6 @@ DialogOption::WmInitDialog(Org_Mes* OrgMes, HWND hwnd, LONG lInitParam)
 	}
 
 	Resampling_Quality->SetCurSel(ParamGlobal.Resampling_Quality);
-
+#endif
 	return true;
 }

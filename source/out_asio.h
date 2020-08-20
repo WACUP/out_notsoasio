@@ -6,7 +6,7 @@
 
 #include "WaitForObject.h"
 
-#define	VER			L"1.3"
+#define	VER			L"1.3.4"
 #define	NAME		L"Not So ASIO v" VER
 #define	INI_NAME	L"Not So ASIO"
 
@@ -62,10 +62,12 @@ PARAM_GLOBAL
 	bool	Convert1chTo2ch;
 	bool	DirectInputMonitor;
 	bool	Volume_Control;
+#ifdef USE_SSRC_MODE
 	bool	Resampling_Enable;
 	int		Resampling_ThreadPriority;
 	UINT	Resampling_SampleRate;
 	int		Resampling_Quality;
+#endif
 };
 
 class
