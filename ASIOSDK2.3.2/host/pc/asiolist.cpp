@@ -154,7 +154,7 @@ AsioDriverList::AsioDriverList ()
 		pdl = pdl->next;
 	}
 
-	if (numdrv) CoInitialize(0);	// initialize COM
+	if (numdrv) CoInitializeEx(0, COINIT_APARTMENTTHREADED);	// initialize COM
 }
 
 AsioDriverList::~AsioDriverList ()

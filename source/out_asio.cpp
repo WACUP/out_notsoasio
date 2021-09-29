@@ -478,7 +478,7 @@ Config(HWND hwndParent)
 {
 	if (output_prefs != NULL)
 	{
-		PostMessage(plugin.hMainWindow, WM_WA_IPC, (WPARAM)output_prefs, IPC_OPENPREFSTOPAGE);
+		OpenPrefsPage((WPARAM)output_prefs);
 	}
 }
 
@@ -634,7 +634,7 @@ SetVolume(int v)
 
 	double newVolume = (volume / 255.0f);
 
-	CoInitialize(NULL);
+	CoInitializeEx(0, COINIT_APARTMENTTHREADED);
 	IMMDeviceEnumerator *deviceEnumerator = NULL;
 	HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_INPROC_SERVER, 
 								  __uuidof(IMMDeviceEnumerator), (LPVOID *)&deviceEnumerator);

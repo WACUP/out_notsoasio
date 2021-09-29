@@ -6,7 +6,7 @@
 
 #include "WaitForObject.h"
 
-#define	VER			L"1.3.4"
+#define	VER			L"1.3.5"
 #define	NAME		L"Not So ASIO v" VER
 #define	INI_NAME	L"Not So ASIO"
 

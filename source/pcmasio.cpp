@@ -744,10 +744,13 @@ PcmAsio::SSRC_SetCreate(void)
 void
 PcmAsio::SetReOpen(void)
 {
+	__try {
 	if(GaplessMode && (NowOpen == false)) {
 		CloseDriver();
 	} else {
 		ReOpen = true;
+		}
+	} __except (EXCEPTION_EXECUTE_HANDLER) {
 	}
 }
 
