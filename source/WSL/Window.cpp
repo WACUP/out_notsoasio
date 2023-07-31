@@ -38,7 +38,7 @@ SWindow::~SWindow(void)
 {
 	if(IsWindow()) {
 		SetWindowLongPtr(GWLP_USERDATA, NULL);
-		if(OriginalWndProc) SetWindowLongPtr(GWLP_WNDPROC, PtrToLong(OriginalWndProc));
+		if(OriginalWndProc) SetWindowLongPtr(GWLP_WNDPROC, (LONG_PTR)OriginalWndProc);
 	} else {
 		if(ControlMode == ControlMode_Normal) ::UnregisterClass(ClassName, WSLhInstance);
 	}
@@ -194,10 +194,9 @@ SWindow::SetSubClass(void)
 {
 	OriginalWndProc = reinterpret_cast<WNDPROC>(GetWindowLongPtr(GWLP_WNDPROC));
 
-	SetWindowLongPtr(GWLP_USERDATA, PtrToLong(this));
-	SetWindowLongPtr(
-				GWLP_WNDPROC,
-				(ControlMode == ControlMode_Dialog) ? PtrToLong(SDialogProc) : PtrToLong(SWindowProc));
+	SetWindowLongPtr(GWLP_USERDATA, (LONG_PTR)this);
+	SetWindowLongPtr(GWLP_WNDPROC, (ControlMode == ControlMode_Dialog) ?
+					 (LONG_PTR)SDialogProc : (LONG_PTR)SWindowProc);
 
 	//SetupWindow();
 }
@@ -210,7 +209,7 @@ SWindow::SWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	if(uMsg == WM_CREATE) {
 		SWindowClass = reinterpret_cast<SWindow*>
 							(reinterpret_cast<LPCREATESTRUCT>(lParam)->lpCreateParams);
-		::SetWindowLongPtr(hwnd, GWLP_USERDATA, PtrToLong(SWindowClass));
+		::SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)SWindowClass);
 	} else {
 		SWindowClass = reinterpret_cast<SWindow*>(::GetWindowLongPtr(hwnd, GWLP_USERDATA));
 	}
@@ -233,7 +232,7 @@ SWindow::SDialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	if(uMsg == WM_INITDIALOG) {
 		SWindowClass = reinterpret_cast<SWindow*>(lParam);
-		::SetWindowLongPtr(hwnd, GWLP_USERDATA, PtrToLong(SWindowClass));
+		::SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)SWindowClass);
 	} else {
 		SWindowClass = reinterpret_cast<SWindow*>(::GetWindowLongPtr(hwnd, GWLP_USERDATA));
 	}
@@ -256,7 +255,7 @@ SWindow::SDialogPropertySheetPageProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
 
 	if(uMsg == WM_INITDIALOG) {
 		SWindowClass = reinterpret_cast<SWindow*>(reinterpret_cast<PROPSHEETPAGE*>(lParam)->lParam);
-		::SetWindowLongPtr(hwnd, GWLP_USERDATA, PtrToLong(SWindowClass));
+		::SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)SWindowClass);
 	} else {
 		SWindowClass = reinterpret_cast<SWindow*>(::GetWindowLongPtr(hwnd, GWLP_USERDATA));
 	}

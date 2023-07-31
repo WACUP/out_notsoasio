@@ -136,7 +136,7 @@ public:
 	int		MsgOpen(UINT sr, int _bps, UINT nch);
 	void	MsgClose(void);
 	int		MsgCanWrite(void);
-	int		MsgWrite(const int size, unsigned char* data);
+	int		MsgWrite(const int size, const unsigned char* data);
 	int		MsgIsPlaying(void);
 	int		MsgPause(const int pause);
 	void	MsgFlush(const int t);
@@ -194,7 +194,7 @@ private:
 	void	Close(void);
 	int		GetCanWriteSize(void);
 	void	FlushWrite(void);
-	void	Write(const bool flush, int size, unsigned char* data);
+	void	Write(const bool flush, int size, const unsigned char* data);
 	void	Play(void);
 	void	Stop(void);
 	inline int	GetLatency(void);

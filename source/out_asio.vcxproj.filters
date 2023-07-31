@@ -22,9 +22,6 @@
     <Filter Include="SSRC">
       <UniqueIdentifier>{352bd7eb-aa13-4f39-bea7-33a77680e938}</UniqueIdentifier>
     </Filter>
-    <Filter Include="External Libraries">
-      <UniqueIdentifier>{f3613abf-06e0-41e4-9f2f-c46a72c3ac38}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CommonFunc.cpp">

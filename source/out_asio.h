@@ -6,7 +6,7 @@
 
 #include "WaitForObject.h"
 
-#define	VER			L"1.3.5"
+#define	VER			L"1.4"
 #define	NAME		L"Not So ASIO v" VER
 #define	INI_NAME	L"Not So ASIO"
 
@@ -24,15 +24,15 @@ void __cdecl	Config(HWND hwndParent);
 void __cdecl	About(HWND hwndParent);
 void __cdecl	Init(void);
 void __cdecl	Quit(void);
-int __cdecl	Open(int samplerate, int numchannels, int bitspersamp, int bufferlenms, int prebufferms);
+int __cdecl	Open(const int samplerate, const int numchannels, const int bitspersamp, const int bufferlenms, const int prebufferms);
 void __cdecl	Close(void);
-int __cdecl	Write(char *buf, int len);
+int __cdecl	Write(const char *buf, const int len);
 int __cdecl	CanWrite(void);
 int __cdecl	IsPlaying(void);
-int __cdecl	Pause(int pause);
-void __cdecl	SetVolume(int volume);
-void __cdecl	SetPan(int pan);
-void __cdecl	Flush(int t);
+int __cdecl	Pause(const int pause);
+void __cdecl	SetVolume(const int volume);
+void __cdecl	SetPan(const int pan);
+void __cdecl	Flush(const int t);
 int __cdecl	GetOutputTime(void);
 int __cdecl	GetWrittenTime(void);
 
@@ -79,12 +79,12 @@ public:
 	int		Param1;
 	int		Param2;
 	int		Param3;
-	unsigned char*	Buff;
+	const unsigned char*	Buff;
 
 	ParamMsg(const int _Msg);
 	ParamMsg(const int _Msg, const int _Param1);
 	ParamMsg(const int _Msg, const int _Param1, const int _Param2, const int _Param3);
-	ParamMsg(const int _Msg, const int _Param1, unsigned char* _Buff);
+	ParamMsg(const int _Msg, const int _Param1, const unsigned char* _Buff);
 	~ParamMsg(void) {}
 
 	int		Call(void);

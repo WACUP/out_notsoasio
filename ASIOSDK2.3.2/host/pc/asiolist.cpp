@@ -21,14 +21,14 @@ static LONG findDrvPath (char *clsidstr,char *dllpath,int dllpathsize)
 	HFILE			hfile;
 	BOOL			found = FALSE;
 
-	CharLowerBuff(clsidstr,strlen(clsidstr));
+	CharLowerBuff(clsidstr,(DWORD)strlen(clsidstr));
 	if ((cr = RegOpenKey(HKEY_CLASSES_ROOT,COM_CLSID,&hkEnum)) == ERROR_SUCCESS) {
 
 		index = 0;
 		while (cr == ERROR_SUCCESS && !found) {
 			cr = RegEnumKey(hkEnum,index++,(LPTSTR)databuf,512);
 			if (cr == ERROR_SUCCESS) {
-				CharLowerBuff(databuf,strlen(databuf));
+				CharLowerBuff(databuf,(DWORD)strlen(databuf));
 				if (!(strcmp(databuf,clsidstr))) {
 					if ((cr = RegOpenKeyEx(hkEnum,(LPCTSTR)databuf,0,KEY_READ,&hksub)) == ERROR_SUCCESS) {
 						if ((cr = RegOpenKeyEx(hksub,(LPCTSTR)INPROC_SERVER,0,KEY_READ,&hkpath)) == ERROR_SUCCESS) {
@@ -154,7 +154,7 @@ AsioDriverList::AsioDriverList ()
 		pdl = pdl->next;
 	}
 
-	if (numdrv) CoInitializeEx(0, COINIT_APARTMENTTHREADED);	// initialize COM
+	if (numdrv) (void)CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);	// initialize COM
 }
 
 AsioDriverList::~AsioDriverList ()

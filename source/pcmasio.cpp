@@ -1057,7 +1057,7 @@ PcmAsio::GetCanWriteSize(void)
 }
 
 int
-PcmAsio::MsgWrite(const int size, unsigned char* data)
+PcmAsio::MsgWrite(const int size, const unsigned char* data)
 {
 	int		RetCode;
 
@@ -1106,7 +1106,7 @@ PcmAsio::FlushWrite(void)
 }
 
 void
-PcmAsio::Write(const bool flush, int size, unsigned char* data)
+PcmAsio::Write(const bool flush, int size, const unsigned char* data)
 {
 	const int	org_size = size;
 	int		CutSamples;
@@ -1152,7 +1152,7 @@ PcmAsio::Write(const bool flush, int size, unsigned char* data)
 	}
 #endif
 
-	unsigned char*	ReadPnt = data;
+	unsigned char*	ReadPnt = (unsigned char *)data;
 
 	while(EndThread == false) {
 		::EnterCriticalSection(&CriticalSection);

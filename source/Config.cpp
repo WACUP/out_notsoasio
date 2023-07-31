@@ -234,7 +234,7 @@ DialogOption::WmInitDialog(Org_Mes* OrgMes, HWND hwnd, LONG lInitParam)
 	for(int Idx = 0; Idx < 10; Idx++) {
 		char	StrSampleRate[8] = {0};
 
-		_itoa_s(List_Resampling_SampleRate[Idx], StrSampleRate, sizeof StrSampleRate, 10);
+		I2AStr(List_Resampling_SampleRate[Idx], StrSampleRate, sizeof StrSampleRate);
 		Resampling_SampleRate->AddString(StrSampleRate);
 
 		if(List_Resampling_SampleRate[Idx] == ParamGlobal.Resampling_SampleRate) {

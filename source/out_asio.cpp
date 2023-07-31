@@ -21,6 +21,7 @@
 #include <endpointvolume.h>
 #include <Functiondiscoverykeys_devpkey.h>
 #include <initguid.h>
+#include <../wacup_version.h>
 
 DEFINE_GUID(CLSID_MMDeviceEnumerator, 0xbcde0395, 0xe52f, 0x467c, 0x8e,0x3d,
     0xc4,0x57,0x92,0x91,0x69,0x2e);
@@ -78,7 +79,7 @@ winampGetOutModule(void)
 }
 
 extern "C" __declspec(dllexport) void __cdecl
-winampGetOutModeChange(int mode)
+winampGetOutModeChange(const int mode)
 {
 	// just look at the set / unset state
 	switch (mode & ~0xFF0)
@@ -336,7 +337,7 @@ ParamMsg::ParamMsg(const int _Msg, const int _Param1, const int _Param2, const i
 	EventWaitThread = NULL;
 }
 
-ParamMsg::ParamMsg(const int _Msg, const int _Param1, unsigned char* _Buff)
+ParamMsg::ParamMsg(const int _Msg, const int _Param1, const unsigned char* _Buff)
 {
 	Msg = _Msg;
 	Param1 = _Param1;
@@ -430,45 +431,45 @@ ReadProfile(void)
 void
 WriteProfile(void)
 {
-	wchar_t str[32];
+	wchar_t str[32] = { 0 };
 
-	_itow_s(ParamGlobal.Device, str, ARRAYSIZE(str), 10);
+	I2WStr(ParamGlobal.Device, str, ARRAYSIZE(str));
 	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"Device", str);
 
-	_itow_s(ParamGlobal.ThreadPriority, str, ARRAYSIZE(str), 10);
+	I2WStr(ParamGlobal.ThreadPriority, str, ARRAYSIZE(str));
 	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"ThreadPriority", str);
 
-	_itow_s(ParamGlobal.BufferSize, str, ARRAYSIZE(str), 10);
+	I2WStr(ParamGlobal.BufferSize, str, ARRAYSIZE(str));
 	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"BufferSize", str);
 
-	_itow_s(ParamGlobal.ShiftChannels, str, ARRAYSIZE(str), 10);
+	I2WStr(ParamGlobal.ShiftChannels, str, ARRAYSIZE(str));
 	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"ShiftChannels", str);
 
 #ifdef USE_GAPLESS_MODE
-	_itow_s(ParamGlobal.GaplessMode, str, ARRAYSIZE(str), 10);
+	I2WStr(ParamGlobal.GaplessMode, str, ARRAYSIZE(str));
 	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"GaplessMode", str);
 #endif
 
-	_itow_s(ParamGlobal.Convert1chTo2ch, str, ARRAYSIZE(str), 10);
+	I2WStr(ParamGlobal.Convert1chTo2ch, str, ARRAYSIZE(str));
 	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"Convert1chTo2ch", str);
 
-	_itow_s(ParamGlobal.DirectInputMonitor, str, ARRAYSIZE(str), 10);
+	I2WStr(ParamGlobal.DirectInputMonitor, str, ARRAYSIZE(str));
 	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"DirectInputMonitor", str);
 
-	_itow_s(ParamGlobal.Volume_Control, str, ARRAYSIZE(str), 10);
+	I2WStr(ParamGlobal.Volume_Control, str, ARRAYSIZE(str));
 	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"Volume_Control", str);
 
 #ifdef USE_SSRC_MODE
-	_itow_s(ParamGlobal.Resampling_Enable, str, ARRAYSIZE(str), 10);
+	I2WStr(ParamGlobal.Resampling_Enable, str, ARRAYSIZE(str));
 	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"Resampling_Enable", str);
 
-	_itow_s(ParamGlobal.Resampling_ThreadPriority, str, ARRAYSIZE(str), 10);
+	I2WStr(ParamGlobal.Resampling_ThreadPriority, str, ARRAYSIZE(str));
 	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"Resampling_ThreadPriority", str);
 
-	_itow_s(ParamGlobal.Resampling_SampleRate, str, ARRAYSIZE(str), 10);
+	I2WStr(ParamGlobal.Resampling_SampleRate, str, ARRAYSIZE(str));
 	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"Resampling_SampleRate", str);
 
-	_itow_s(ParamGlobal.Resampling_Quality, str, ARRAYSIZE(str), 10);
+	I2WStr(ParamGlobal.Resampling_Quality, str, ARRAYSIZE(str));
 	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"Resampling_Quality", str);
 #endif
 }
@@ -497,7 +498,7 @@ About(HWND hwndParent)
 	wchar_t message[1024] = {0};//, text[1024] = {0};
 	//WASABI_API_LNGSTRINGW_BUF(IDS_ABOUT_TITLE, text, 1024);
 	StringCchPrintfW(message, ARRAYSIZE(message), //WASABI_API_LNGSTRINGW(IDS_ABOUT_TEXT),
-					 L"%s\n© 2019 %s\t\nBuild date: %hs\n\n"
+					 L"%s\n© 2019-" WACUP_COPYRIGHT L" %s\t\nBuild date: %hs\n\n"
 					 L"Plug-in originally copyright © 2002-2006 Otachan\n"
 					 L"The original download is at http://otachan.com/\n\n"
 					 L"Updated code to comply with the LGPL v2 is at "
@@ -554,7 +555,7 @@ Quit(void)
 }
 
 int __cdecl
-Open(int samplerate, int numchannels, int bitspersamp, int bufferlenms, int prebufferms)
+Open(const int samplerate, const int numchannels, const int bitspersamp, const int bufferlenms, const int prebufferms)
 {
 	PlayEOF = false;
 
@@ -601,9 +602,9 @@ Close(void)
 }
 
 int __cdecl
-Write(char *buf, int len)
+Write(const char *buf, const int len)
 {
-	return ParamMsg(MSG_WRITE, len, reinterpret_cast<unsigned char*>(buf)).Call();
+	return ParamMsg(MSG_WRITE, len, reinterpret_cast<const unsigned char*>(buf)).Call();
 }
 
 int __cdecl
@@ -634,7 +635,7 @@ SetVolume(int v)
 
 	double newVolume = (volume / 255.0f);
 
-	CoInitializeEx(0, COINIT_APARTMENTTHREADED);
+	(void)CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	IMMDeviceEnumerator *deviceEnumerator = NULL;
 	HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_INPROC_SERVER, 
 								  __uuidof(IMMDeviceEnumerator), (LPVOID *)&deviceEnumerator);
