@@ -127,6 +127,7 @@ static LPASIODRVSTRUCT getDrvStruct (int drvID,LPASIODRVSTRUCT lpdrv)
 // ******************************************************************
 //	AsioDriverList
 // ******************************************************************
+#include <loader/loader/utils.h>
 AsioDriverList::AsioDriverList ()
 {
 	HKEY			hkEnum = 0;
@@ -154,14 +155,14 @@ AsioDriverList::AsioDriverList ()
 		pdl = pdl->next;
 	}
 
-	if (numdrv) (void)CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);	// initialize COM
+	if (numdrv) (void)CreateCOM();	// initialize COM
 }
 
 AsioDriverList::~AsioDriverList ()
 {
 	if (numdrv) {
 		deleteDrvStruct(lpdrvlist);
-		CoUninitialize();
+		CloseCOM();
 	}
 }
 

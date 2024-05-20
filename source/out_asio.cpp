@@ -157,7 +157,7 @@ winampGetOutPrefs(prefsDlgRecW* prefs)
 		// TODO localise
 		prefs->hInst = WSLhInstance;// WASABI_API_LNG_HINST;
 		prefs->dlgID = IDD_CONFIG;
-		prefs->name = _wcsdup(/*WASABI_API_LNGSTRINGW(IDS_ASIO)*/L"ASIO");
+		prefs->name = /*WASABI_API_LNGSTRINGW_DUP(IDS_ASIO)/*/L"ASIO"/**/;
 		prefs->proc = CfgProc;
 		prefs->where = 9;
 		prefs->_id = 51;
@@ -367,8 +367,8 @@ ParamMsg::Call(void)
 				// things can cause calls to hang &
 				// that will eventually kill the ui
 				// thread & bring down the process.
-				//::WaitForSingleObjectEx(EventWaitThread, 250/*/INFINITE/**/, TRUE);
-				while (::WaitForSingleObjectEx(EventWaitThread, 250/*/INFINITE/**/, TRUE) != WAIT_OBJECT_0);
+				//::WaitForSingleObjectEx(EventWaitThread, 1000/*/INFINITE/**/, TRUE);
+				while (::WaitForSingleObjectEx(EventWaitThread, 1000/*/INFINITE/**/, TRUE) != WAIT_OBJECT_0);
 				::CloseHandle(EventWaitThread);
 				EventWaitThread = NULL;
 			}
@@ -498,7 +498,7 @@ About(HWND hwndParent)
 	wchar_t message[1024] = {0};//, text[1024] = {0};
 	//WASABI_API_LNGSTRINGW_BUF(IDS_ABOUT_TITLE, text, 1024);
 	StringCchPrintfW(message, ARRAYSIZE(message), //WASABI_API_LNGSTRINGW(IDS_ABOUT_TEXT),
-					 L"%s\n© 2019-" WACUP_COPYRIGHT L" %s\t\nBuild date: %hs\n\n"
+					 L"%s\n© 2019-" WACUP_COPYRIGHT L" %s\t\nBuild date: %s\n\n"
 					 L"Plug-in originally copyright © 2002-2006 Otachan\n"
 					 L"The original download is at http://otachan.com/\n\n"
 					 L"Updated code to comply with the LGPL v2 is at "
@@ -507,8 +507,8 @@ About(HWND hwndParent)
 					 L"Note: Not all audio drivers support ASIO & may require\n"
 					 L"you to install ASIO4ALL (https://asio4all.org/) to be able\n"
 					 L"to use this output plug-in. Otherwise different output "
-					 L"plug-ins may be better suited for your audio output.",
-					 (LPWSTR)plugin.description, L"Darren Owen aka DrO", __DATE__, L"2.3.2");
+					 L"plug-ins may be better suited for your audio output.", (LPWSTR)
+					 plugin.description, WACUP_AUTHOR_STRW, TEXT(__DATE__), L"2.3.2");
 	AboutMessageBox(hwndParent, message, L"Not So ASIO"/*text*/);
 }
 
@@ -551,6 +551,8 @@ Quit(void)
 	if (Loaded)
 	{
 		::DeleteCriticalSection(&CriticalSection);
+
+		Loaded = false;
 	}
 }
 
@@ -635,40 +637,48 @@ SetVolume(int v)
 
 	double newVolume = (volume / 255.0f);
 
-	(void)CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	(void)CreateCOM();
 	IMMDeviceEnumerator *deviceEnumerator = NULL;
 	HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_INPROC_SERVER, 
 								  __uuidof(IMMDeviceEnumerator), (LPVOID *)&deviceEnumerator);
 	IMMDevice *defaultDevice = NULL;
 
-	hr = deviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &defaultDevice);
-	deviceEnumerator->Release();
-	deviceEnumerator = NULL;
+	if (deviceEnumerator != NULL)
+	{
+		hr = deviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &defaultDevice);
+		deviceEnumerator->Release();
+	}
 
 	IAudioEndpointVolume *endpointVolume = NULL;
-	hr = defaultDevice->Activate(__uuidof(IAudioEndpointVolume), 
-								 CLSCTX_INPROC_SERVER, NULL,
-								 (LPVOID *)&endpointVolume);
-	defaultDevice->Release();
-	defaultDevice = NULL;
+
+	if (defaultDevice != NULL)
+	{
+		hr = defaultDevice->Activate(__uuidof(IAudioEndpointVolume), 
+									 CLSCTX_INPROC_SERVER, NULL,
+									 (LPVOID *)&endpointVolume);
+		defaultDevice->Release();
+	}
 
 	// -------------------------
-	float currentVolume = 0;
-	endpointVolume->GetMasterVolumeLevel(&currentVolume);
-
-	hr = endpointVolume->GetMasterVolumeLevelScalar(&currentVolume);
-
-	/*if (bScalar == false)
+	if (endpointVolume != NULL)
 	{
-		hr = endpointVolume->SetMasterVolumeLevel((float)newVolume, NULL);
-	}
-	else if (bScalar == true)*/
-	{
-		hr = endpointVolume->SetMasterVolumeLevelScalar((float)newVolume, NULL);
-	}
-	endpointVolume->Release();
+		float currentVolume = 0;
+		endpointVolume->GetMasterVolumeLevel(&currentVolume);
 
-	CoUninitialize();
+		hr = endpointVolume->GetMasterVolumeLevelScalar(&currentVolume);
+
+		/*if (bScalar == false)
+		{
+			hr = endpointVolume->SetMasterVolumeLevel((float)newVolume, NULL);
+		}
+		else if (bScalar == true)*/
+		{
+			hr = endpointVolume->SetMasterVolumeLevelScalar((float)newVolume, NULL);
+		}
+		endpointVolume->Release();
+	}
+
+	CloseCOM();
 }
 
 void __cdecl
