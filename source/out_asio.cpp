@@ -21,7 +21,6 @@
 #include <endpointvolume.h>
 #include <Functiondiscoverykeys_devpkey.h>
 #include <initguid.h>
-#include <../wacup_version.h>
 
 DEFINE_GUID(CLSID_MMDeviceEnumerator, 0xbcde0395, 0xe52f, 0x467c, 0x8e,0x3d,
     0xc4,0x57,0x92,0x91,0x69,0x2e);
@@ -498,17 +497,18 @@ About(HWND hwndParent)
 	wchar_t message[1024] = {0};//, text[1024] = {0};
 	//WASABI_API_LNGSTRINGW_BUF(IDS_ABOUT_TITLE, text, 1024);
 	StringCchPrintfW(message, ARRAYSIZE(message), //WASABI_API_LNGSTRINGW(IDS_ABOUT_TEXT),
-					 L"%s\n© 2019-" WACUP_COPYRIGHT L" %s\t\nBuild date: %s\n\n"
-					 L"Plug-in originally copyright © 2002-2006 Otachan\n"
-					 L"The original download is at http://otachan.com/\n\n"
+					 L"%s\n© 2019-%s %s\t\nBuild date: %hs\n\nPlug-in "
+					 L"originally copyright © 2002-2006 Otachan\nThe "
+					 L"original download is at http://otachan.com/\n\n"
 					 L"Updated code to comply with the LGPL v2 is at "
-					 L"https://github.com/WACUP/out_notsoasio\n\n"
-					 L"ASIO Technology by Steinberg (ASIO SDK v%s)\n\n"
-					 L"Note: Not all audio drivers support ASIO & may require\n"
-					 L"you to install ASIO4ALL (https://asio4all.org/) to be able\n"
-					 L"to use this output plug-in. Otherwise different output "
-					 L"plug-ins may be better suited for your audio output.", (LPWSTR)
-					 plugin.description, WACUP_AUTHOR_STRW, TEXT(__DATE__), L"2.3.2");
+					 L"https://github.com/WACUP/out_notsoasio\n\nASIO"
+					 L"Technology by Steinberg (ASIO SDK v%s)\n\nNote: "
+					 L"Not all audio drivers support ASIO & may require\n"
+					 L"you to install ASIO4ALL (https://asio4all.org/) "
+					 L"to be able\nto use this output plug-in. Otherwise "
+					 L"different output\nplug-ins may be better suited "
+					 L"for your audio output.", (LPWSTR)plugin.description,
+					 WACUP_Copyright(), WACUP_Author(), __DATE__, L"2.3.2");
 	AboutMessageBox(hwndParent, message, L"Not So ASIO"/*text*/);
 }
 
