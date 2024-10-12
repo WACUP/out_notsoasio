@@ -218,7 +218,14 @@ ASIOError ASIOCreateBuffers(ASIOBufferInfo *bufferInfos, long numChannels,
 			info->buffers[0] = info->buffers[1] = 0;
 		return ASE_NotPresent;
 	}
-	return theAsioDriver->createBuffers(bufferInfos, numChannels, bufferSize, callbacks);
+	__try
+	{
+		return theAsioDriver->createBuffers(bufferInfos, numChannels, bufferSize, callbacks);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		return ASE_NotPresent;
+	}
 }
 
 ASIOError ASIODisposeBuffers(void)

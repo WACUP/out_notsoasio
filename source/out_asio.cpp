@@ -359,15 +359,21 @@ ParamMsg::Call(void)
 
 			if (EventWaitThread != NULL)
 			{
-				::QueueUserAPC(&ApcProc, hThread, reinterpret_cast<ULONG_PTR>(this));
+				CheckThreadHandleIsValid(&hThread);
 
-				// changing this to not wait forever
-				// is because driver issues & other
-				// things can cause calls to hang &
-				// that will eventually kill the ui
-				// thread & bring down the process.
-				//::WaitForSingleObjectEx(EventWaitThread, 1000/*/INFINITE/**/, TRUE);
-				while (::WaitForSingleObjectEx(EventWaitThread, 1000/*/INFINITE/**/, TRUE) != WAIT_OBJECT_0);
+				if (hThread != NULL)
+				{
+					::QueueUserAPC(&ApcProc, hThread, reinterpret_cast<ULONG_PTR>(this));
+
+					// changing this to not wait forever
+					// is because driver issues & other
+					// things can cause calls to hang &
+					// that will eventually kill the ui
+					// thread & bring down the process.
+					//::WaitForSingleObjectEx(EventWaitThread, 1000/*/INFINITE/**/, TRUE);
+					while (::WaitForSingleObjectEx(EventWaitThread, 1000/*/INFINITE/**/, TRUE) != WAIT_OBJECT_0);
+				}
+
 				::CloseHandle(EventWaitThread);
 				EventWaitThread = NULL;
 			}
@@ -522,6 +528,8 @@ void __cdecl
 Quit(void)
 {
 	UnSubclass(plugin.hMainWindow, HookProc);
+
+	CheckThreadHandleIsValid(&hThread);
 
 	if (hThread != NULL)
 	{
