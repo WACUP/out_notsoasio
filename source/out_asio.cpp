@@ -242,10 +242,15 @@ ApcProc(ULONG_PTR dwParam)
 					// this seems to help with live device switching
 					// but some drivers (realtek) are just a mess :(
 					if (Param->RetMsg == -1) {
-						pPcmAsio->MsgClose();
+						if (pPcmAsio != NULL) {
+							pPcmAsio->MsgClose();
 
-						Param->RetMsg = pPcmAsio->MsgOpen(Param->Param1, Param->Param2, Param->Param3);
-						if (Param->RetMsg == -1) {
+							Param->RetMsg = pPcmAsio->MsgOpen(Param->Param1, Param->Param2, Param->Param3);
+							if (Param->RetMsg == -1) {
+								break;
+							}
+						}
+						else {
 							break;
 						}
 					}
@@ -359,9 +364,7 @@ ParamMsg::Call(void)
 
 			if (EventWaitThread != NULL)
 			{
-				CheckThreadHandleIsValid(&hThread);
-
-				if (hThread != NULL)
+				if (CheckThreadHandleIsValid(&hThread))
 				{
 					::QueueUserAPC(&ApcProc, hThread, reinterpret_cast<ULONG_PTR>(this));
 
@@ -529,9 +532,7 @@ Quit(void)
 {
 	UnSubclass(plugin.hMainWindow, HookProc);
 
-	CheckThreadHandleIsValid(&hThread);
-
-	if (hThread != NULL)
+	if (CheckThreadHandleIsValid(&hThread))
 	{
 		if (EventDestroyThread != NULL)
 		{

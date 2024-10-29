@@ -102,8 +102,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,4,5,0
- PRODUCTVERSION 1,4,5,0
+ FILEVERSION 1,4,6,0
+ PRODUCTVERSION 1,4,6,0
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -120,12 +120,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "WACUP"
             VALUE "FileDescription", "Output Plug-in"
-            VALUE "FileVersion", "1.4.5.0"
+            VALUE "FileVersion", "1.4.6.0"
             VALUE "InternalName", "out_notsoasio.dll"
             VALUE "LegalCopyright", "Copyright © 2002-2006 Otachan, Not So ASIO modifications by Darren Owen aka DrO © 2019-2024"
             VALUE "OriginalFilename", "out_notsoasio.dll"
             VALUE "ProductName", "Not So ASIO Output"
-            VALUE "ProductVersion", "1.4.5.0"
+            VALUE "ProductVersion", "1.4.6.0"
         END
     END
     BLOCK "VarFileInfo"
