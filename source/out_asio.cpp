@@ -156,7 +156,7 @@ winampGetOutPrefs(prefsDlgRecW* prefs)
 		// TODO localise
 		prefs->hInst = WSLhInstance;// WASABI_API_LNG_HINST;
 		prefs->dlgID = IDD_CONFIG;
-		prefs->name = /*WASABI_API_LNGSTRINGW_DUP(IDS_ASIO)/*/L"ASIO"/**/;
+		prefs->name = (LPWSTR)/*WASABI_API_LNGSTRINGW_DUP(IDS_ASIO)/*/L"ASIO"/**/;
 		prefs->proc = CfgProc;
 		prefs->where = 9;
 		prefs->_id = 51;
@@ -639,9 +639,16 @@ Pause(int pause)
 void __cdecl
 SetVolume(int v)
 {
-	if ((v != -666) && ParamGlobal.Volume_Control)
+	if (v != -666)
 	{
-		volume = v;
+		if (ParamGlobal.Volume_Control && AllowOutputVolumeControl())
+		{
+			volume = v;
+		}
+		else
+		{
+			volume = 255;
+		}
 	}
 
 	double newVolume = (volume / 255.0f);

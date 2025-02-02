@@ -7,6 +7,8 @@
 #include "Config.h"
 #include "pcmasio.h"
 
+#include <loader/loader/utils.h>
+
 extern AsioDrivers*	asioDrivers;
 extern bool Loaded;
 extern PARAM_GLOBAL	ParamGlobal;
@@ -219,6 +221,7 @@ DialogOption::WmInitDialog(Org_Mes* OrgMes, HWND hwnd, LONG lInitParam)
 	if(ParamGlobal.Volume_Control) {
 		Volume_Control->Check();
 	}
+	Volume_Control->EnableWindow(AllowOutputVolumeControl());
 
 #ifdef USE_SSRC_MODE
 	if(ParamGlobal.Resampling_Enable) {

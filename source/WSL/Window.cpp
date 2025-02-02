@@ -701,7 +701,7 @@ bool
 SWindow::UpdateWindow(void)
 {
 	return ::UpdateWindow(HWindow) != 0;
-}
+}*/
 
 bool
 SWindow::EnableWindow(bool fEnable)
@@ -709,7 +709,7 @@ SWindow::EnableWindow(bool fEnable)
 	return ::EnableWindow(HWindow, fEnable) != 0;
 }
 
-bool
+/*bool
 SWindow::InvalidateRect(const RECT* lpRect, bool fErase)
 {
 	return ::InvalidateRect(HWindow, lpRect, fErase) != 0;
