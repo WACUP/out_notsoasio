@@ -570,6 +570,11 @@ Open(const int samplerate, const int numchannels, const int bitspersamp, const i
 {
 	PlayEOF = false;
 
+	if (!Loaded)
+	{
+		return -1;
+	}
+
 	if (EventReadyThread == NULL)
 	{
 		EventReadyThread = ::CreateEvent(NULL, false, false, NULL);
