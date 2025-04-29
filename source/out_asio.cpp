@@ -101,7 +101,7 @@ winampGetOutModeChange(const int mode)
 					if (WASABI_API_LNG == NULL)
 					{
 						ServiceBuild(WASABI_API_SVC, WASABI_API_LNG, languageApiGUID);
-						WASABI_API_START_LANG(plugin.hDllInstance, OutIgnorantLangGUID);
+						StartPluginLangOnly(plugin.hDllInstance, OutIgnorantLangGUID);
 					}
 				}
 			}*/
@@ -153,15 +153,18 @@ winampGetOutPrefs(prefsDlgRecW* prefs)
 	// page to be placed as a child of the 'Output' node (why not)
 	if (prefs)
 	{
-		// TODO localise
-		prefs->hInst = WSLhInstance;// WASABI_API_LNG_HINST;
-		prefs->dlgID = IDD_CONFIG;
-		prefs->name = (LPWSTR)/*WASABI_API_LNGSTRINGW_DUP(IDS_ASIO)/*/L"ASIO"/**/;
-		prefs->proc = CfgProc;
-		prefs->where = 9;
-		prefs->_id = 51;
-		output_prefs = prefs;
-		return TRUE;
+		if (output_prefs == NULL)
+		{
+			// TODO localise
+			prefs->hInst = WSLhInstance;// WASABI_API_LNG_HINST;
+			prefs->dlgID = IDD_CONFIG;
+			prefs->name = (LPWSTR)/*LngStringDup(IDS_ASIO)/*/L"ASIO"/**/;
+			prefs->proc = CfgProc;
+			prefs->where = 9;
+			prefs->_id = 51;
+			output_prefs = prefs;
+			return TRUE;
+		}
 	}
 	return FALSE;
 }
@@ -504,20 +507,21 @@ About(HWND hwndParent)
 			MB_ICONINFORMATION);*/
 	// TODO localise
 	wchar_t message[1024] = {0};//, text[1024] = {0};
-	//WASABI_API_LNGSTRINGW_BUF(IDS_ABOUT_TITLE, text, 1024);
-	StringCchPrintfW(message, ARRAYSIZE(message), //WASABI_API_LNGSTRINGW(IDS_ABOUT_TEXT),
-					 L"%s\n© 2019-%s %s\t\nBuild date: %hs\n\nPlug-in "
-					 L"originally copyright © 2002-2006 Otachan\nThe "
-					 L"original download is at http://otachan.com/\n\n"
-					 L"Updated code to comply with the LGPL v2 is at "
-					 L"https://github.com/WACUP/out_notsoasio\n\nASIO"
-					 L"Technology by Steinberg (ASIO SDK v%s)\n\nNote: "
-					 L"Not all audio drivers support ASIO & may require\n"
-					 L"you to install ASIO4ALL (https://asio4all.org/) "
-					 L"to be able\nto use this output plug-in. Otherwise "
-					 L"different output\nplug-ins may be better suited "
-					 L"for your audio output.", (LPWSTR)plugin.description,
-					 WACUP_Copyright(), WACUP_Author(), __DATE__, L"2.3.2");
+	//LngStringCopy(IDS_ABOUT_TITLE, text, 1024);
+	// TODO make a GZ version
+	PrintfCch(message, ARRAYSIZE(message), //LangString(IDS_ABOUT_TEXT),
+			  L"%s\n© 2019-%s %s\t\nBuild date: %hs\n\nPlug-in "
+			  L"originally copyright © 2002-2006 Otachan\nThe "
+			  L"original download is at http://otachan.com/\n\n"
+			  L"Updated code to comply with the LGPL v2 is at "
+			  L"https://github.com/WACUP/out_notsoasio\n\nASIO"
+			  L"Technology by Steinberg (ASIO SDK v%s)\n\nNote: "
+			  L"Not all audio drivers support ASIO & may require\n"
+			  L"you to install ASIO4ALL (https://asio4all.org/) "
+			  L"to be able\nto use this output plug-in. Otherwise "
+			  L"different output\nplug-ins may be better suited "
+			  L"for your audio output.", (LPWSTR)plugin.description,
+			  WACUP_Copyright(), WACUP_Author(), __DATE__, L"2.3.2");
 	AboutMessageBox(hwndParent, message, L"Not So ASIO"/*text*/);
 }
 
