@@ -530,7 +530,8 @@ PcmAsio::OpenDriver(void)
 		const int	MaxDriver = asioDrivers->asioGetNumDev();
 		if(MaxDriver && (ParamGlobal.Device < MaxDriver)) {
 			const int	DriverNameLen = 64;
-			char	DriverName[DriverNameLen] = {0};
+			char	DriverName[DriverNameLen]/* = {0}*/;
+			DriverName[0] = 0;
 
 			if(asioDrivers->asioGetDriverName(ParamGlobal.Device, DriverName, DriverNameLen) == 0) {
 				if(asioDrivers->loadDriver(DriverName)) {

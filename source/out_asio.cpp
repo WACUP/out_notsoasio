@@ -153,20 +153,16 @@ winampGetOutPrefs(prefsDlgRecW* prefs)
 	// page to be placed as a child of the 'Output' node (why not)
 	if (prefs)
 	{
-		if (output_prefs == NULL)
-		{
-			// TODO localise
-			prefs->hInst = WSLhInstance;// WASABI_API_LNG_HINST;
-			prefs->dlgID = IDD_CONFIG;
-			prefs->name = (LPWSTR)/*LngStringDup(IDS_ASIO)/*/L"ASIO"/**/;
-			prefs->proc = CfgProc;
-			prefs->where = 9;
-			prefs->_id = 51;
-			output_prefs = prefs;
-			return TRUE;
-		}
+		// TODO localise
+		prefs->hInst = WSLhInstance;// WASABI_API_LNG_HINST;
+		prefs->dlgID = IDD_CONFIG;
+		prefs->name = (LPWSTR)/*LngStringDup(IDS_ASIO)/*/L"ASIO"/**/;
+		prefs->proc = CfgProc;
+		prefs->where = 9;
+		prefs->_id = 51;
+		output_prefs = prefs;
 	}
-	return FALSE;
+	return !!output_prefs;
 }
 
 LRESULT CALLBACK
@@ -442,7 +438,7 @@ ReadProfile(void)
 void
 WriteProfile(void)
 {
-	wchar_t str[32] = { 0 };
+	wchar_t str[32]/* = { 0 }*/;
 
 	I2WStr(ParamGlobal.Device, str, ARRAYSIZE(str));
 	SaveNativeIniString(PLUGIN_INI, INI_NAME, L"Device", str);
@@ -506,7 +502,7 @@ About(HWND hwndParent)
 			"About",
 			MB_ICONINFORMATION);*/
 	// TODO localise
-	wchar_t message[1024] = {0};//, text[1024] = {0};
+	wchar_t message[1024]/* = {0}*/;//, text[1024] = {0};
 	//LngStringCopy(IDS_ABOUT_TITLE, text, 1024);
 	// TODO make a GZ version
 	PrintfCch(message, ARRAYSIZE(message), //LangString(IDS_ABOUT_TEXT),
@@ -536,24 +532,12 @@ Quit(void)
 {
 	UnSubclass(plugin.hMainWindow, HookProc);
 
-	if (CheckThreadHandleIsValid(&hThread))
+	if (EventDestroyThread != NULL)
 	{
-		if (EventDestroyThread != NULL)
-		{
-			::SetEvent(EventDestroyThread);
-		}
-
-		if (::WaitForSingleObjectEx(hThread, 1000/*INFINITE*/, TRUE) != WAIT_OBJECT_0)
-		{
-			if (::TerminateThread(hThread, 0))
-			{
-				::WaitForSingleObjectEx(hThread, 1000/*INFINITE*/, TRUE);
-			}
-		}
-
-		::CloseHandle(hThread);
-		hThread = NULL;
+		::SetEvent(EventDestroyThread);
 	}
+
+	WaitForThreadToClose(&hThread, 1000/*/INFINITE/**/);
 
 	if (EventDestroyThread != NULL)
 	{
