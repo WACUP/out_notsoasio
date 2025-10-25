@@ -21,7 +21,7 @@ public:
 		LARGE_INTEGER	RetCode;
 
 		if(SupportedPerformanceCounter) {
-			::QueryPerformanceCounter(&RetCode);
+			GetPerfCounterNow(&RetCode, NULL);
 		} else {
 			::timeBeginPeriod(Period);
 			RetCode.QuadPart = ::timeGetTime();

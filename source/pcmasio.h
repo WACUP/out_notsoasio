@@ -2,7 +2,7 @@
 #include <asiosys.h>
 #include <asio.h>
 #include <../host/asiodrivers.h>
-
+#include <loader\loader\utils.h>
 #include "Timer.h"
 #ifdef USE_SSRC_MODE
 #include "ssrc/ssrc.h"

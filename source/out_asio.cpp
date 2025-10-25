@@ -146,7 +146,9 @@ INT_PTR CALLBACK CfgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 
 extern "C" __declspec(dllexport) BOOL __cdecl
-winampGetOutPrefs(prefsDlgRecW* prefs)
+winampGetOutPrefs(prefsDlgRecW* prefs, const int mode)
+{
+	if (!mode)
 {
 	// this is called when the preferences window is being created
 	// and is used for the delayed registering of a native prefs
@@ -161,6 +163,14 @@ winampGetOutPrefs(prefsDlgRecW* prefs)
 		prefs->where = 9;
 		prefs->_id = 51;
 		output_prefs = prefs;
+		}
+	}
+	else
+	{
+		if (output_prefs != NULL)
+		{
+			output_prefs = (prefsDlgRecW*)RemovePrefsPage((WPARAM)output_prefs, TRUE);
+		}
 	}
 	return !!output_prefs;
 }
