@@ -122,7 +122,7 @@ BEGIN
             VALUE "FileDescription", "Output Plug-in"
             VALUE "FileVersion", "1.4.11.0"
             VALUE "InternalName", "out_notsoasio.dll"
-            VALUE "LegalCopyright", "Copyright © 2002-2006 Otachan, Not So ASIO modifications by Darren Owen aka DrO © 2019-2025"
+            VALUE "LegalCopyright", "Copyright © 2002-2006 Otachan, Not So ASIO modifications by Darren Owen aka DrO © 2019-2026"
             VALUE "OriginalFilename", "out_notsoasio.dll"
             VALUE "ProductName", "Not So ASIO Output"
             VALUE "ProductVersion", "1.4.11.0"

@@ -149,20 +149,20 @@ extern "C" __declspec(dllexport) BOOL __cdecl
 winampGetOutPrefs(prefsDlgRecW* prefs, const int mode)
 {
 	if (!mode)
-{
-	// this is called when the preferences window is being created
-	// and is used for the delayed registering of a native prefs
-	// page to be placed as a child of the 'Output' node (why not)
-	if (prefs)
 	{
-		// TODO localise
-		prefs->hInst = WSLhInstance;// WASABI_API_LNG_HINST;
-		prefs->dlgID = IDD_CONFIG;
-		prefs->name = (LPWSTR)/*LngStringDup(IDS_ASIO)/*/L"ASIO"/**/;
-		prefs->proc = CfgProc;
-		prefs->where = 9;
-		prefs->_id = 51;
-		output_prefs = prefs;
+		// this is called when the preferences window is being created
+		// and is used for the delayed registering of a native prefs
+		// page to be placed as a child of the 'Output' node (why not)
+		if (prefs)
+		{
+			// TODO localise
+			prefs->hInst = WSLhInstance;// WASABI_API_LNG_HINST;
+			prefs->dlgID = IDD_CONFIG;
+			prefs->name = (LPWSTR)/*LngStringDup(IDS_ASIO)/*/L"ASIO"/**/;
+			prefs->proc = CfgProc;
+			prefs->where = 9;
+			prefs->_id = 51;
+			output_prefs = prefs;
 		}
 	}
 	else
