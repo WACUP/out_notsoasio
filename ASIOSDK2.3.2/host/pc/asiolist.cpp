@@ -182,7 +182,8 @@ LONG AsioDriverList::asioOpenDriver (int drvID,LPVOID *asiodrv)
 
 	if ((lpdrv = getDrvStruct(drvID,lpdrvlist)) != 0) {
 		if (!lpdrv->asiodrv) {
-			rc = CoCreateInstance(lpdrv->clsid,0,CLSCTX_INPROC_SERVER,lpdrv->clsid,asiodrv);
+			rc = CreateCOMInProc(lpdrv->clsid,lpdrv->clsid,asiodrv,TRUE);/*/
+			rc = CoCreateInstance(lpdrv->clsid,0,CLSCTX_INPROC_SERVER,lpdrv->clsid,asiodrv);/**/
 			if (rc == S_OK) {
 				lpdrv->asiodrv = *asiodrv;
 				return 0;

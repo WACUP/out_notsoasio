@@ -658,8 +658,10 @@ SetVolume(int v)
 
 	(void)CreateCOM();
 	IMMDeviceEnumerator *deviceEnumerator = NULL;
+	HRESULT hr = CreateCOMInProc(__uuidof(MMDeviceEnumerator), __uuidof(IMMDeviceEnumerator),
+														   (LPVOID*)&deviceEnumerator, TRUE);/*/
 	HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_INPROC_SERVER, 
-								  __uuidof(IMMDeviceEnumerator), (LPVOID *)&deviceEnumerator);
+								  __uuidof(IMMDeviceEnumerator), (LPVOID *)&deviceEnumerator);/**/
 	IMMDevice *defaultDevice = NULL;
 
 	if (deviceEnumerator != NULL)
