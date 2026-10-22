@@ -6,7 +6,7 @@
 
 #include "WaitForObject.h"
 
-#define	VER			L"1.4.12"
+#define	VER			L"1.4.13"
 #define	NAME		L"Not So ASIO v" VER
 #define	INI_NAME	L"Not So ASIO"
 
@@ -24,7 +24,7 @@ void __cdecl	Config(HWND hwndParent);
 void __cdecl	About(HWND hwndParent);
 void __cdecl	Init(void);
 void __cdecl	Quit(void);
-int __cdecl	Open(const int samplerate, const int numchannels, const int bitspersamp, const int bufferlenms, const int prebufferms);
+int __cdecl Open(OUT_OPEN_PARAM);
 void __cdecl	Close(void);
 int __cdecl	Write(const char *buf, const int len);
 int __cdecl	CanWrite(void);

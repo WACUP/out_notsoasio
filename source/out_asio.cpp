@@ -10,7 +10,6 @@
 
 #include <windows.h>
 #include <process.h>
-#include <strsafe.h>
 #include "out_asio.h"
 #include "Config.h"
 #include "pcmasio.h"
@@ -564,7 +563,7 @@ Quit(void)
 }
 
 int __cdecl
-Open(const int samplerate, const int numchannels, const int bitspersamp, const int bufferlenms, const int prebufferms)
+Open(OUT_OPEN_PARAM)
 {
 	PlayEOF = false;
 
